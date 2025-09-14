@@ -44,10 +44,22 @@ Neural Quant is a production-ready quantitative trading system designed for inst
    pip install -r requirements.txt
    ```
 
-4. **Configure the system**
+4. **Start MLflow tracking server**
    ```bash
-   cp configs/config.example.yaml configs/config.yaml
-   # Edit configs/config.yaml with your settings
+   source venv/bin/activate
+   mlflow ui --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns --host 0.0.0.0 --port 5000
+   ```
+
+5. **Launch the Streamlit dashboard**
+   ```bash
+   source venv/bin/activate
+   streamlit run app.py
+   ```
+
+6. **Run your first strategy**
+   ```bash
+   source venv/bin/activate
+   python scripts/run_strategy.py --strategy momentum --symbols AAPL --timeframe 1d --years 1
    ```
 
 5. **Verify installation**
@@ -96,7 +108,7 @@ python scripts/run_strategy.py
                     ┌─────────────────┐
                     │  Risk & Control │
                     ├─────────────────┤
-                    │ • Position Sizing│
+                    │ • Position Size │
                     │ • Stop Loss     │
                     │ • Circuit Breaks│
                     │ • Portfolio Risk│
@@ -320,7 +332,35 @@ python scripts/paper_trading.py --strategy momentum --symbols AAPL,MSFT
 - **Experiment Tracking**: Automatic logging of strategy parameters and results
 - **Model Registry**: Version control for trained models
 - **Artifact Storage**: Save and retrieve strategy artifacts
-- **UI Dashboard**: Web interface for experiment analysis
+- **UI Dashboard**: Web interface for experiment analysis at `http://localhost:5000`
+
+### Streamlit Dashboard
+
+A comprehensive web-based dashboard for experiment analysis and strategy monitoring:
+
+**Features:**
+- **Real-time MLflow Integration**: Direct SQLite database connection
+- **Advanced Filtering**: Filter by symbol, strategy, gate, Sharpe ratio, drawdown
+- **Performance Leaderboard**: Ranked by Sharpe_post_cost, MaxDD, Turnover, VaR/CVaR
+- **Run Detail Analysis**: Parameters, metrics, metadata, and artifact previews
+- **Visual Artifacts**: Equity curves, price+MA charts, CSV data tables
+- **Interactive Charts**: Built-in Streamlit plotting capabilities
+- **File Browser**: Complete artifact directory listing
+
+**Access:**
+```bash
+streamlit run app.py
+# Dashboard available at: http://localhost:8501
+```
+
+**Environment Variables:**
+```bash
+# Custom MLflow database path
+MLFLOW_DB_PATH=/path/to/mlflow.db streamlit run app.py
+
+# Custom artifact root
+MLFLOW_ARTIFACT_ROOT=/path/to/mlruns streamlit run app.py
+```
 
 ### Logging
 

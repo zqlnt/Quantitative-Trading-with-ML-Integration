@@ -166,7 +166,7 @@ rank_cols = [c for c in ["run_id", "symbol", "strategy", "ma_fast", "ma_slow",
 
 # Find the best column to sort by (prefer Sharpe_post_cost, fallback to others)
 sort_col = None
-for col in ["Sharpe_post_cost", "MaxDD", "start_time"]:
+for col in ["Sharpe_post_cost", "MaxDD", "start_time", "run_id"]:
     if col in filtered.columns:
         sort_col = col
         break
@@ -181,10 +181,15 @@ else:
     st.info("No standard metric columns found yet. Run a baseline to populate metrics like Sharpe_post_cost, MaxDD, Turnover.")
 
 st.subheader("All Matching Runs")
-st.dataframe(
-    filtered.sort_values(by=["start_time"], ascending=False),
-    use_container_width=True,
-)
+# Sort by available columns
+sort_cols = [col for col in ["start_time", "run_id"] if col in filtered.columns]
+if sort_cols:
+    st.dataframe(
+        filtered.sort_values(by=sort_cols, ascending=False),
+        use_container_width=True,
+    )
+else:
+    st.dataframe(filtered, use_container_width=True)
 
 # -----------------------------
 # Run detail & artifact preview
