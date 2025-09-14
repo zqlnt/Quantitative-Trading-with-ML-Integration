@@ -177,6 +177,10 @@ if rank_cols and sort_col:
     lb = filtered[rank_cols].sort_values(by=sort_col, ascending=ascending, na_position="last")
     st.dataframe(lb, use_container_width=True)
     st.caption(f"Sorted by: {sort_col}")
+elif rank_cols:
+    # If we have columns but no sort column, just display without sorting
+    st.dataframe(filtered[rank_cols], use_container_width=True)
+    st.caption("No sortable columns available")
 else:
     st.info("No standard metric columns found yet. Run a baseline to populate metrics like Sharpe_post_cost, MaxDD, Turnover.")
 
@@ -184,10 +188,15 @@ st.subheader("All Matching Runs")
 # Sort by available columns
 sort_cols = [col for col in ["start_time", "run_id"] if col in filtered.columns]
 if sort_cols:
-    st.dataframe(
-        filtered.sort_values(by=sort_cols, ascending=False),
-        use_container_width=True,
-    )
+    try:
+        st.dataframe(
+            filtered.sort_values(by=sort_cols, ascending=False),
+            use_container_width=True,
+        )
+    except KeyError:
+        # If sorting fails, just display without sorting
+        st.dataframe(filtered, use_container_width=True)
+        st.caption("Displaying unsorted data")
 else:
     st.dataframe(filtered, use_container_width=True)
 
