@@ -7,6 +7,7 @@
 import os
 import sqlite3
 from pathlib import Path
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -93,7 +94,7 @@ def load_runs_from_sqlite(db_path: str) -> pd.DataFrame:
     return df
 
 
-def artifacts_dir_for_run(run_id: str, experiment_id: str | int) -> Path:
+def artifacts_dir_for_run(run_id: str, experiment_id: Union[str, int]) -> Path:
     # MLflow FileStore layout: mlruns/<exp_id>/<run_id>/artifacts
     return ARTIFACT_ROOT / str(experiment_id) / str(run_id) / "artifacts"
 
