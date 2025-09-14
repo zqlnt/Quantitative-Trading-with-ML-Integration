@@ -35,6 +35,9 @@ def parse_arguments():
     parser.add_argument('--timeframe', default='1d', help='Timeframe for data (default: 1d)')
     parser.add_argument('--years', type=int, default=1, help='Number of years of data (default: 1)')
     parser.add_argument('--lookback', type=int, default=20, help='Lookback period for strategy (default: 20)')
+    parser.add_argument('--ma_fast', type=int, default=10, help='Fast moving average period (default: 10)')
+    parser.add_argument('--ma_slow', type=int, default=30, help='Slow moving average period (default: 30)')
+    parser.add_argument('--threshold', type=float, default=0.02, help='Signal threshold (default: 0.02)')
     return parser.parse_args()
 
 def main():
@@ -61,10 +64,12 @@ def main():
         if args.strategy.lower() == 'momentum':
             strategy = MomentumStrategy({
                 'lookback_period': args.lookback,
-            'threshold': 0.02,
-            'min_volume': 1000000,
-            'max_positions': 5
-        })
+                'threshold': args.threshold,
+                'ma_fast': args.ma_fast,
+                'ma_slow': args.ma_slow,
+                'min_volume': 1000000,
+                'max_positions': 5
+            })
         
         # Get historical data
         start_date_str = start_date.strftime("%Y-%m-%d")
