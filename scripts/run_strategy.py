@@ -7,6 +7,7 @@ This script demonstrates how to run a trading strategy with the Neural Quant fra
 
 import sys
 import logging
+import argparse
 from pathlib import Path
 from datetime import datetime, timedelta
 import pandas as pd
@@ -26,8 +27,19 @@ def setup_logging():
     )
     return logging.getLogger(__name__)
 
+def parse_arguments():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description='Run Neural Quant trading strategy')
+    parser.add_argument('--strategy', default='momentum', help='Strategy to run (default: momentum)')
+    parser.add_argument('--symbols', nargs='+', default=['AAPL', 'MSFT', 'GOOGL'], help='Symbols to trade (default: AAPL MSFT GOOGL)')
+    parser.add_argument('--timeframe', default='1d', help='Timeframe for data (default: 1d)')
+    parser.add_argument('--years', type=int, default=1, help='Number of years of data (default: 1)')
+    parser.add_argument('--lookback', type=int, default=20, help='Lookback period for strategy (default: 20)')
+    return parser.parse_args()
+
 def main():
-    """Run a momentum strategy example."""
+    """Run a trading strategy with specified parameters."""
+    args = parse_arguments()
     logger = setup_logging()
     
     logger.info("=" * 60)
@@ -35,38 +47,39 @@ def main():
     logger.info("=" * 60)
     
     try:
-        # Get symbols from config
-        from utils.config.config_manager import get_config
-        config = get_config()
-        symbols = config.trading.default_symbols[:3]  # Use first 3 symbols
+        # Calculate date range
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=args.years * 365)
         
-        logger.info(f"Running strategy for symbols: {symbols}")
+        logger.info(f"Running {args.strategy} strategy for symbols: {args.symbols}")
+        logger.info(f"Timeframe: {args.timeframe}, Period: {start_date.date()} to {end_date.date()}")
         
         # Create data collector
         collector = YFinanceCollector()
         
-        # Create strategy
-        strategy = MomentumStrategy({
-            'lookback_period': 20,
+        # Create strategy based on type
+        if args.strategy.lower() == 'momentum':
+            strategy = MomentumStrategy({
+                'lookback_period': args.lookback,
             'threshold': 0.02,
             'min_volume': 1000000,
             'max_positions': 5
         })
         
         # Get historical data
-        end_date = datetime.now().strftime("%Y-%m-%d")
-        start_date = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
+        start_date_str = start_date.strftime("%Y-%m-%d")
+        end_date_str = end_date.strftime("%Y-%m-%d")
         
-        logger.info(f"Fetching data from {start_date} to {end_date}")
+        logger.info(f"Fetching data from {start_date_str} to {end_date_str}")
         
         all_data = []
-        for symbol in symbols:
+        for symbol in args.symbols:
             try:
                 data = collector.get_historical_data(
                     symbol=symbol,
-                    start_date=start_date,
-                    end_date=end_date,
-                    timeframe="1d"
+                    start_date=start_date_str,
+                    end_date=end_date_str,
+                    timeframe=args.timeframe
                 )
                 if not data.empty:
                     all_data.append(data)
@@ -88,7 +101,7 @@ def main():
         
         # Run backtest
         logger.info("Running backtest...")
-        results = strategy.run_backtest(combined_data, start_date, end_date)
+        results = strategy.run_backtest(combined_data, start_date_str, end_date_str)
         
         if not results:
             logger.error("Backtest failed")
