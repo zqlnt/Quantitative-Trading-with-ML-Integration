@@ -1,0 +1,195 @@
+# Neural Quant Configuration Template
+# Copy this file to config.yaml and update with your actual values
+
+# Environment settings
+environment: development  # development, paper_trading, live_trading
+
+# MLflow Configuration
+mlflow:
+  tracking_uri: "sqlite:///mlflow.db"
+  experiment_name: "neural_quant_experiments"
+  artifact_root: "./mlruns"
+  registry_uri: "sqlite:///mlflow.db"
+
+# Data Sources Configuration
+data_sources:
+  yfinance:
+    enabled: true
+    rate_limit: 1.0  # seconds between requests
+    
+  alpha_vantage:
+    enabled: false
+    api_key: "YOUR_ALPHA_VANTAGE_API_KEY"
+    rate_limit: 12.0  # seconds between requests (5 requests per minute)
+    
+  polygon:
+    enabled: false
+    api_key: "YOUR_POLYGON_API_KEY"
+    rate_limit: 0.2  # seconds between requests
+    
+  iex_cloud:
+    enabled: false
+    api_key: "YOUR_IEX_CLOUD_API_KEY"
+    rate_limit: 0.1  # seconds between requests
+
+# Broker Configuration
+brokers:
+  alpaca:
+    enabled: false
+    api_key: "YOUR_ALPACA_API_KEY"
+    secret_key: "YOUR_ALPACA_SECRET_KEY"
+    base_url: "https://paper-api.alpaca.markets"  # paper trading URL
+    data_url: "https://data.alpaca.markets"
+    
+  interactive_brokers:
+    enabled: false
+    host: "127.0.0.1"
+    port: 7497
+    client_id: 1
+
+# Trading Configuration
+trading:
+  default_symbols: ["AAPL", "MSFT", "GOOGL", "TSLA", "NVDA"]
+  default_timeframe: "1d"
+  max_position_size: 0.1  # 10% of portfolio per position
+  max_daily_loss: 0.05    # 5% max daily loss
+  max_drawdown: 0.15      # 15% max drawdown
+  
+  # Paper Trading Settings
+  paper_trading:
+    initial_capital: 100000  # $100,000 starting capital
+    commission: 0.0          # No commission for paper trading
+    slippage: 0.001         # 0.1% slippage simulation
+
+# Risk Management
+risk:
+  position_sizing:
+    method: "fixed_percentage"  # fixed_percentage, kelly, volatility_targeting
+    max_position_pct: 0.1       # 10% max position size
+    
+  stop_loss:
+    enabled: true
+    default_pct: 0.05  # 5% stop loss
+    
+  take_profit:
+    enabled: true
+    default_pct: 0.15  # 15% take profit
+    
+  circuit_breakers:
+    max_daily_trades: 50
+    max_concurrent_positions: 10
+    max_daily_loss_pct: 0.05
+
+# Model Configuration
+models:
+  baseline:
+    momentum:
+      lookback_period: 20
+      threshold: 0.02
+      
+    mean_reversion:
+      lookback_period: 20
+      threshold: 2.0  # z-score threshold
+      
+    logistic_regression:
+      features: ["rsi", "macd", "bollinger_upper", "bollinger_lower"]
+      test_size: 0.2
+      
+  neural:
+    lstm:
+      sequence_length: 60
+      hidden_units: 50
+      dropout: 0.2
+      epochs: 100
+      batch_size: 32
+      
+    transformer:
+      sequence_length: 60
+      d_model: 64
+      n_heads: 8
+      n_layers: 4
+      dropout: 0.1
+      epochs: 100
+      batch_size: 32
+
+# Feature Engineering
+features:
+  technical_indicators:
+    rsi:
+      period: 14
+    macd:
+      fast_period: 12
+      slow_period: 26
+      signal_period: 9
+    bollinger_bands:
+      period: 20
+      std_dev: 2
+    sma:
+      periods: [5, 10, 20, 50, 200]
+    ema:
+      periods: [5, 10, 20, 50, 200]
+      
+  fundamental_features:
+    enabled: false
+    include_ratios: true
+    include_earnings: true
+    
+  sentiment_features:
+    enabled: false
+    news_sources: ["newsapi", "reddit", "twitter"]
+    update_frequency: "1h"
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # File logging
+  file_logging:
+    enabled: true
+    log_dir: "./logs"
+    max_file_size: "10MB"
+    backup_count: 5
+    
+  # Trade logging
+  trade_logging:
+    enabled: true
+    log_trades: true
+    log_signals: true
+    log_performance: true
+
+# Database Configuration
+database:
+  type: "sqlite"  # sqlite, postgresql, mysql
+  path: "./data/neural_quant.db"
+  
+  # For production databases
+  # host: "localhost"
+  # port: 5432
+  # username: "neural_quant"
+  # password: "your_password"
+  # database: "neural_quant"
+
+# API Configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  debug: true
+  
+# Notification Configuration
+notifications:
+  email:
+    enabled: false
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    username: "your_email@gmail.com"
+    password: "your_app_password"
+    to_addresses: ["your_email@gmail.com"]
+    
+  slack:
+    enabled: false
+    webhook_url: "YOUR_SLACK_WEBHOOK_URL"
+    
+  discord:
+    enabled: false
+    webhook_url: "YOUR_DISCORD_WEBHOOK_URL"
