@@ -17,6 +17,26 @@ Neural Quant is a production-ready quantitative trading system designed for inst
 - **Experiment Tracking**: MLflow integration for strategy performance monitoring
 - **Modular Architecture**: Extensible design for custom strategies and data sources
 
+## Package Structure
+
+Neural Quant uses a modern Python package structure with `src/` layout:
+
+```
+neural-quant/
+├── pyproject.toml              # Package configuration
+├── src/
+│   └── neural_quant/           # Main package
+│       ├── core/               # Backtesting engine, metrics
+│       ├── data/               # Data loaders (yfinance, etc.)
+│       ├── strategies/         # Trading strategies
+│       ├── scripts/            # Command-line tools
+│       └── utils/              # Utilities and configuration
+├── configs/                    # Configuration files
+├── tests/                      # Test suite
+├── app.py                      # Streamlit dashboard
+└── README.md                   # This file
+```
+
 ## Quick Start
 
 ### Prerequisites
@@ -59,20 +79,27 @@ Neural Quant is a production-ready quantitative trading system designed for inst
 6. **Run your first strategy**
    ```bash
    source venv/bin/activate
-   python scripts/run_strategy.py --strategy momentum --symbols AAPL --timeframe 1d --years 1
+   python -m neural_quant.scripts.run_strategy --strategy momentum --symbols AAPL --timeframe 1d --years 1
    ```
 
-5. **Verify installation**
+7. **Verify installation**
    ```bash
-   python scripts/verify_setup.py
+   source venv/bin/activate
+   python -m neural_quant.scripts.verify_setup
    ```
 
 ### Basic Usage
 
+**Important**: Always use module execution (`python -m`) instead of direct script execution to avoid import issues.
+
 #### 1. Run a Strategy Backtest
 
 ```bash
-python scripts/run_strategy.py
+# Basic momentum strategy
+python -m neural_quant.scripts.run_strategy --strategy momentum --symbols AAPL --timeframe 1d --years 1
+
+# Advanced parameters
+python -m neural_quant.scripts.run_strategy --strategy momentum --symbols AAPL MSFT GOOGL --timeframe 1d --years 3 --ma_fast 10 --ma_slow 30 --threshold 0.0
 ```
 
 #### 2. Start MLflow UI
