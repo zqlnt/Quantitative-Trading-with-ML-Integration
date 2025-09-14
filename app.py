@@ -84,7 +84,11 @@ def load_runs_from_sqlite(db_path: str) -> pd.DataFrame:
     # Make numeric where possible
     for c in df.columns:
         if c not in ("run_id", "lifecycle_stage"):
-            df[c] = pd.to_numeric(df[c], errors="ignore")
+            try:
+                df[c] = pd.to_numeric(df[c])
+            except (ValueError, TypeError):
+                # Keep as string if conversion fails
+                pass
 
     # Friendly derived columns
     for col in ("start_time", "end_time"):
@@ -159,9 +163,20 @@ filtered = df.loc[mask].copy()
 st.subheader("Leaderboard")
 rank_cols = [c for c in ["run_id", "symbol", "strategy", "ma_fast", "ma_slow",
                          "Sharpe_post_cost", "MaxDD", "Turnover", "VaR95", "CVaR95"] if c in filtered.columns]
-if rank_cols:
-    lb = filtered[rank_cols].sort_values(by="Sharpe_post_cost", ascending=False, na_position="last")
+
+# Find the best column to sort by (prefer Sharpe_post_cost, fallback to others)
+sort_col = None
+for col in ["Sharpe_post_cost", "MaxDD", "start_time"]:
+    if col in filtered.columns:
+        sort_col = col
+        break
+
+if rank_cols and sort_col:
+    # Sort by the available column
+    ascending = False if sort_col in ["Sharpe_post_cost", "start_time"] else True
+    lb = filtered[rank_cols].sort_values(by=sort_col, ascending=ascending, na_position="last")
     st.dataframe(lb, use_container_width=True)
+    st.caption(f"Sorted by: {sort_col}")
 else:
     st.info("No standard metric columns found yet. Run a baseline to populate metrics like Sharpe_post_cost, MaxDD, Turnover.")
 
