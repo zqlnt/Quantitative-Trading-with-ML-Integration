@@ -190,27 +190,36 @@ class Backtester:
     
     def _log_to_mlflow(self, results: Dict[str, Any], strategy):
         """Log backtest results to MLflow."""
-        with mlflow.start_run():
-            # Log parameters
-            mlflow.log_params({
-                'strategy': strategy.__class__.__name__,
-                'initial_capital': self.initial_capital,
-                'commission': self.commission,
-                'slippage': self.slippage
-            })
+        try:
+            # Set tracking URI if not already set
+            import mlflow
+            if not mlflow.get_tracking_uri():
+                mlflow.set_tracking_uri("sqlite:///mlflow.db")
             
-            # Log metrics
-            mlflow.log_metrics({
-                'total_return': results.get('total_return', 0),
-                'annualized_return': results.get('annualized_return', 0),
-                'volatility': results.get('volatility', 0),
-                'sharpe_ratio': results.get('sharpe_ratio', 0),
-                'max_drawdown': results.get('max_drawdown', 0),
-                'total_trades': results.get('total_trades', 0),
-                'win_rate': results.get('win_rate', 0)
-            })
-            
-            # Log equity curve
-            if 'equity_curve' in results:
-                results['equity_curve'].to_csv('equity_curve.csv')
-                mlflow.log_artifact('equity_curve.csv')
+            with mlflow.start_run():
+                # Log parameters
+                mlflow.log_params({
+                    'strategy': strategy.__class__.__name__,
+                    'initial_capital': self.initial_capital,
+                    'commission': self.commission,
+                    'slippage': self.slippage
+                })
+                
+                # Log metrics
+                mlflow.log_metrics({
+                    'total_return': results.get('total_return', 0),
+                    'annualized_return': results.get('annualized_return', 0),
+                    'volatility': results.get('volatility', 0),
+                    'sharpe_ratio': results.get('sharpe_ratio', 0),
+                    'max_drawdown': results.get('max_drawdown', 0),
+                    'total_trades': results.get('total_trades', 0),
+                    'win_rate': results.get('win_rate', 0)
+                })
+                
+                # Log equity curve
+                if 'equity_curve' in results:
+                    results['equity_curve'].to_csv('equity_curve.csv')
+                    mlflow.log_artifact('equity_curve.csv')
+        except Exception as e:
+            # If MLflow logging fails, just continue without it
+            print(f"Warning: MLflow logging failed: {e}")

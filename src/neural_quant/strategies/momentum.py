@@ -72,9 +72,18 @@ class MovingAverageCrossover:
                 if date_naive not in signals:
                     signals[date_naive] = {}
                 
+                # Get previous day's values safely
+                prev_date = date - pd.Timedelta(days=1)
+                if prev_date in ma_fast.index and prev_date in ma_slow.index:
+                    ma_fast_prev = ma_fast[prev_date]
+                    ma_slow_prev = ma_slow[prev_date]
+                else:
+                    # If previous day doesn't exist, skip this date
+                    continue
+                
                 # Check for buy signal (fast MA crosses above slow MA)
                 if (ma_fast[date] > ma_slow[date] and 
-                    ma_fast[date - pd.Timedelta(days=1)] <= ma_slow[date - pd.Timedelta(days=1)] and
+                    ma_fast_prev <= ma_slow_prev and
                     crossover_strength[date] >= self.threshold and
                     row['volume'] >= self.min_volume and
                     len(self.current_positions) < self.max_positions):
@@ -85,7 +94,7 @@ class MovingAverageCrossover:
                 
                 # Check for sell signal (fast MA crosses below slow MA)
                 elif (ma_fast[date] < ma_slow[date] and 
-                      ma_fast[date - pd.Timedelta(days=1)] >= ma_slow[date - pd.Timedelta(days=1)] and
+                      ma_fast_prev >= ma_slow_prev and
                       symbol in self.current_positions):
                     
                     signals[date_naive][symbol] = 'SELL'
