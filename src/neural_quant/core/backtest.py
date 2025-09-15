@@ -201,7 +201,7 @@ class Backtester:
             if not mlflow.get_tracking_uri():
                 mlflow.set_tracking_uri("sqlite:///mlflow.db")
             
-            with mlflow.start_run():
+            with mlflow.start_run() as run:
                 # Log parameters
                 mlflow.log_params({
                     'strategy': strategy.__class__.__name__,
@@ -225,6 +225,25 @@ class Backtester:
                 if 'equity_curve' in results:
                     results['equity_curve'].to_csv('equity_curve.csv')
                     mlflow.log_artifact('equity_curve.csv')
+                
+                # Try to generate AI summary if available
+                try:
+                    from ..utils.llm_assistant import NeuralQuantAssistant
+                    assistant = NeuralQuantAssistant()
+                    summary = assistant.generate_experiment_summary(
+                        run.info.run_id,
+                        results,
+                        {
+                            'strategy': strategy.__class__.__name__,
+                            'initial_capital': self.initial_capital,
+                            'commission': self.commission,
+                            'slippage': self.slippage
+                        }
+                    )
+                    mlflow.set_tag("ai_summary", summary)
+                except Exception as ai_error:
+                    print(f"Warning: AI summary generation failed: {ai_error}")
+                    
         except Exception as e:
             # If MLflow logging fails, just continue without it
             print(f"Warning: MLflow logging failed: {e}")

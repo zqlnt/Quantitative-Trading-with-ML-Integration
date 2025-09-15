@@ -1,10 +1,12 @@
 import streamlit as st
 import pandas as pd
 import mlflow
+import os
 from datetime import date
 from neural_quant.data.yf_loader import load_yf_data
 from neural_quant.strategies.momentum import MovingAverageCrossover
 from neural_quant.core.backtest import Backtester
+from neural_quant.utils.llm_assistant import NeuralQuantAssistant
 
 # Page config
 st.set_page_config(
@@ -15,7 +17,20 @@ st.set_page_config(
 
 # Main title
 st.title("Neural-Quant")
-st.markdown("Advanced Algorithmic Trading Platform")
+st.markdown("Advanced Algorithmic Trading Platform with AI Assistant")
+
+# Initialize session state
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
+if 'current_results' not in st.session_state:
+    st.session_state.current_results = None
+if 'assistant' not in st.session_state:
+    try:
+        st.session_state.assistant = NeuralQuantAssistant()
+        st.session_state.assistant_available = True
+    except ValueError:
+        st.session_state.assistant = None
+        st.session_state.assistant_available = False
 
 # Sidebar
 with st.sidebar:
@@ -37,6 +52,54 @@ with st.sidebar:
     
     st.markdown("---")
     run_btn = st.button("Run Backtest", use_container_width=True)
+    
+    # AI Assistant Section
+    st.markdown("---")
+    st.header("🤖 AI Assistant")
+    
+    if not st.session_state.assistant_available:
+        st.warning("⚠️ Anthropic API key not found. Set ANTHROPIC_API_KEY environment variable to enable AI features.")
+    else:
+        st.success("✅ AI Assistant Ready")
+        
+        # Quick analysis button
+        if st.session_state.current_results:
+            if st.button("🧠 Analyze Results", use_container_width=True):
+                with st.spinner("AI is analyzing your results..."):
+                    analysis = st.session_state.assistant.analyze_backtest_results(
+                        st.session_state.current_results['metrics'],
+                        st.session_state.current_results['equity'],
+                        st.session_state.current_results['trades'],
+                        st.session_state.current_results['params']
+                    )
+                    st.session_state.chat_history.append({
+                        "role": "assistant",
+                        "content": f"## 📊 Backtest Analysis\n\n{analysis}"
+                    })
+                    st.rerun()
+        
+        # Chat interface
+        st.subheader("💬 Ask Questions")
+        user_question = st.text_input("Ask about trading, strategies, or results:", key="user_question")
+        
+        if st.button("Send", key="send_question") and user_question:
+            with st.spinner("AI is thinking..."):
+                context = st.session_state.current_results if st.session_state.current_results else None
+                answer = st.session_state.assistant.answer_question(user_question, context)
+                st.session_state.chat_history.append({
+                    "role": "user",
+                    "content": user_question
+                })
+                st.session_state.chat_history.append({
+                    "role": "assistant", 
+                    "content": answer
+                })
+                st.rerun()
+        
+        # Clear chat button
+        if st.button("🗑️ Clear Chat", use_container_width=True):
+            st.session_state.chat_history = []
+            st.rerun()
 
 # MLflow setup
 mlflow.set_tracking_uri("http://localhost:5000")
@@ -87,6 +150,24 @@ if run_btn:
                 mlflow.log_artifact("trades.csv")
                 run_url = f"{mlflow.get_tracking_uri().rstrip('/')}/#/experiments/{mlflow.get_experiment_by_name('ma_crossover').experiment_id}/runs/{run.info.run_id}"
 
+            # Store results for AI assistant
+            st.session_state.current_results = {
+                'metrics': metrics,
+                'equity': equity,
+                'trades': trades,
+                'params': {
+                    'ticker': ticker,
+                    'start': str(start),
+                    'end': str(end),
+                    'fast': fast,
+                    'slow': slow,
+                    'threshold_pct': threshold,
+                    'fee_bps': fee_bps,
+                    'slippage_bps': slip_bps,
+                    'strategy': 'MovingAverageCrossover'
+                }
+            }
+            
             # Display results
             st.success("Backtest completed successfully!")
             
@@ -136,3 +217,16 @@ if run_btn:
             st.error(f"Error running backtest: {str(e)}")
 else:
     st.info("Configure parameters in the sidebar and click 'Run Backtest' to begin.")
+
+# AI Chat Display
+if st.session_state.chat_history:
+    st.markdown("---")
+    st.header("💬 AI Assistant Chat")
+    
+    for message in st.session_state.chat_history:
+        if message["role"] == "user":
+            with st.chat_message("user"):
+                st.write(message["content"])
+        else:
+            with st.chat_message("assistant"):
+                st.markdown(message["content"])
