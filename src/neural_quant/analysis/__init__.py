@@ -57,6 +57,20 @@ from .basic_exits import (
     create_basic_exits_config
 )
 
+from ..logging.artifacts import (
+    ArtifactManager,
+    ArtifactType,
+    ParamsArtifact,
+    MetricsArtifact,
+    EquityArtifact,
+    TradesArtifact,
+    MCPTArtifact,
+    BootstrapArtifact,
+    WalkForwardArtifact,
+    WeightsArtifact,
+    SummaryArtifact
+)
+
 __all__ = [
     'MonteCarloPermutationTester',
     'MCPTConfig', 
@@ -84,5 +98,16 @@ __all__ = [
     'create_position_management_config',
     'BasicExits',
     'BasicExitsConfig',
-    'create_basic_exits_config'
+    'create_basic_exits_config',
+    'ArtifactManager',
+    'ArtifactType',
+    'ParamsArtifact',
+    'MetricsArtifact',
+    'EquityArtifact',
+    'TradesArtifact',
+    'MCPTArtifact',
+    'BootstrapArtifact',
+    'WalkForwardArtifact',
+    'WeightsArtifact',
+    'SummaryArtifact'
 ]

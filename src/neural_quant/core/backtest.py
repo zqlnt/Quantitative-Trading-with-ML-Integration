@@ -12,6 +12,7 @@ from ..analysis.bootstrap import BootstrapAnalyzer, BootstrapConfig
 from ..analysis.regime_filter import RegimeFilter, RegimeFilterConfig
 from ..analysis.volatility_targeting import VolatilityTargeting, VolatilityTargetingConfig
 from ..analysis.basic_exits import BasicExits, BasicExitsConfig
+from ..logging.artifacts import ArtifactManager
 
 class Backtester:
     """High-fidelity backtesting engine with realistic transaction costs."""
@@ -159,6 +160,9 @@ class Backtester:
         
         # Log to MLflow
         self._log_to_mlflow(results, strategy)
+        
+        # Create and save artifacts
+        self._create_artifacts(results, strategy, start_date, end_date)
         
         return results
     
@@ -528,3 +532,104 @@ class Backtester:
         except Exception as e:
             # If MLflow logging fails, just continue without it
             print(f"Warning: MLflow logging failed: {e}")
+    
+    def _create_artifacts(self, results: Dict[str, Any], strategy, start_date: str, end_date: str):
+        """Create and save structured artifacts for the run."""
+        try:
+            import mlflow
+            
+            # Get current run ID
+            run_id = mlflow.active_run().info.run_id if mlflow.active_run() else "unknown"
+            
+            # Create artifact manager
+            artifact_manager = ArtifactManager(run_id)
+            
+            # Create parameters artifact
+            strategy_params = getattr(strategy, 'params', {})
+            tickers = [strategy.symbol] if hasattr(strategy, 'symbol') else []
+            
+            # Get configuration dictionaries
+            regime_config = self.regime_filter.get_regime_summary() if self.regime_filter else None
+            vol_config = self.vol_targeting.get_scaling_summary() if self.vol_targeting else None
+            basic_exits_config = self.basic_exits.get_exits_summary() if self.basic_exits else None
+            
+            artifact_manager.create_params_artifact(
+                strategy=strategy.__class__.__name__,
+                strategy_params=strategy_params,
+                tickers=tickers,
+                start_date=start_date or "unknown",
+                end_date=end_date or "unknown",
+                initial_capital=self.initial_capital,
+                commission=self.commission,
+                slippage=self.slippage,
+                regime_filter_config=regime_config,
+                vol_targeting_config=vol_config,
+                basic_exits_config=basic_exits_config
+            )
+            
+            # Create metrics artifact
+            portfolio_metrics = {
+                'total_return': results.get('total_return', 0.0),
+                'annualized_return': results.get('annualized_return', 0.0),
+                'volatility': results.get('volatility', 0.0),
+                'sharpe_ratio': results.get('sharpe_ratio', 0.0),
+                'max_drawdown': results.get('max_drawdown', 0.0),
+                'total_trades': results.get('total_trades', 0),
+                'win_rate': results.get('win_rate', 0.0),
+                'profit_factor': results.get('profit_factor', 0.0),
+                'cagr': results.get('cagr', 0.0)
+            }
+            
+            artifact_manager.create_metrics_artifact(
+                portfolio_metrics=portfolio_metrics,
+                per_ticker_metrics={},
+                regime_metrics=regime_config,
+                vol_targeting_metrics=vol_config,
+                basic_exits_metrics=basic_exits_config
+            )
+            
+            # Create equity artifact
+            if 'equity_curve' in results and 'daily_returns' in results:
+                artifact_manager.create_equity_artifact(
+                    equity_curve=results['equity_curve'],
+                    daily_returns=results['daily_returns']
+                )
+            
+            # Create trades artifact
+            if 'trades' in results:
+                artifact_manager.create_trades_artifact(results['trades'])
+            
+            # Create MCPT artifact
+            if 'mcpt_results' in results and results['mcpt_results']:
+                mcpt_data = results['mcpt_results']
+                artifact_manager.create_mcpt_artifact(
+                    method=mcpt_data.get('method', 'returns_permutation'),
+                    permutations=mcpt_data.get('permutations', 1000),
+                    block_size=mcpt_data.get('block_size'),
+                    significance_level=mcpt_data.get('significance_level', 0.05),
+                    results=mcpt_data.get('results', [])
+                )
+            
+            # Create bootstrap artifact
+            if 'bootstrap_results' in results and results['bootstrap_results']:
+                bootstrap_data = results['bootstrap_results']
+                artifact_manager.create_bootstrap_artifact(
+                    method=bootstrap_data.get('method', 'bootstrap'),
+                    samples=bootstrap_data.get('samples', 1000),
+                    confidence_level=bootstrap_data.get('confidence_level', 0.95),
+                    results=bootstrap_data.get('results', [])
+                )
+            
+            # Save all artifacts
+            saved_files = artifact_manager.save_all_artifacts()
+            
+            # Log artifacts to MLflow
+            if mlflow.active_run():
+                for artifact_name, filepath in saved_files.items():
+                    try:
+                        mlflow.log_artifact(filepath)
+                    except Exception as e:
+                        print(f"Warning: Failed to log artifact {artifact_name}: {e}")
+            
+        except Exception as e:
+            print(f"Warning: Artifact creation failed: {e}")
