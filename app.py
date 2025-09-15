@@ -20,7 +20,7 @@ DB_PATH = os.getenv("MLFLOW_DB_PATH", "mlflow.db")
 ARTIFACT_ROOT = Path(os.getenv("MLFLOW_ARTIFACT_ROOT", "./mlruns"))
 
 st.set_page_config(page_title="Neural Quant – Experiments", layout="wide")
-st.title("🧠 Neural Quant — Experiment Dashboard")
+st.title("Neural Quant — Experiment Dashboard")
 
 # -----------------------------
 # Helpers

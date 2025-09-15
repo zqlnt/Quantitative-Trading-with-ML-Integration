@@ -55,16 +55,16 @@ with st.sidebar:
     
     # AI Assistant Section
     st.markdown("---")
-    st.header("🤖 AI Assistant")
+    st.header("AI Assistant")
     
     if not st.session_state.assistant_available:
-        st.warning("⚠️ Anthropic API key not found. Set ANTHROPIC_API_KEY environment variable to enable AI features.")
+        st.warning("Anthropic API key not found. Set ANTHROPIC_API_KEY environment variable to enable AI features.")
     else:
-        st.success("✅ AI Assistant Ready")
+        st.success("AI Assistant Ready")
         
         # Quick analysis button
         if st.session_state.current_results:
-            if st.button("🧠 Analyze Results", use_container_width=True):
+            if st.button("Analyze Results", use_container_width=True):
                 with st.spinner("AI is analyzing your results..."):
                     analysis = st.session_state.assistant.analyze_backtest_results(
                         st.session_state.current_results['metrics'],
@@ -74,12 +74,12 @@ with st.sidebar:
                     )
                     st.session_state.chat_history.append({
                         "role": "assistant",
-                        "content": f"## 📊 Backtest Analysis\n\n{analysis}"
+                        "content": f"## Backtest Analysis\n\n{analysis}"
                     })
                     st.rerun()
         
         # Chat interface
-        st.subheader("💬 Ask Questions")
+        st.subheader("Ask Questions")
         user_question = st.text_input("Ask about trading, strategies, or results:", key="user_question")
         
         if st.button("Send", key="send_question") and user_question:
@@ -97,7 +97,7 @@ with st.sidebar:
                 st.rerun()
         
         # Clear chat button
-        if st.button("🗑️ Clear Chat", use_container_width=True):
+        if st.button("Clear Chat", use_container_width=True):
             st.session_state.chat_history = []
             st.rerun()
 
@@ -221,7 +221,7 @@ else:
 # AI Chat Display
 if st.session_state.chat_history:
     st.markdown("---")
-    st.header("💬 AI Assistant Chat")
+    st.header("AI Assistant Chat")
     
     for message in st.session_state.chat_history:
         if message["role"] == "user":

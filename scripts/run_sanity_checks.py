@@ -53,11 +53,11 @@ def test_purged_cv_correctness():
         test_instance.test_embargo_period()
         test_instance.test_time_series_split()
         
-        logger.info("✓ Purged CV correctness tests passed")
+        logger.info("Purged CV correctness tests passed")
         return True
         
     except Exception as e:
-        logger.error(f"✗ Purged CV correctness tests failed: {e}")
+        logger.error(f"Purged CV correctness tests failed: {e}")
         return False
 
 
@@ -73,11 +73,11 @@ def test_cost_reconciliation():
         test_instance.test_backtest_vs_paper_costs()
         test_instance.test_cost_parity_with_different_sizes()
         
-        logger.info("✓ Cost reconciliation tests passed")
+        logger.info("Cost reconciliation tests passed")
         return True
         
     except Exception as e:
-        logger.error(f"✗ Cost reconciliation tests failed: {e}")
+        logger.error(f"Cost reconciliation tests failed: {e}")
         return False
 
 
@@ -99,14 +99,14 @@ def test_metrics_sanity():
         results = checker.check_metrics_sanity(metrics)
         
         if results['passed']:
-            logger.info("✓ Metrics sanity checks passed")
+            logger.info("Metrics sanity checks passed")
             return True
         else:
-            logger.error(f"✗ Metrics sanity checks failed: {results['issues']}")
+            logger.error(f"Metrics sanity checks failed: {results['issues']}")
             return False
             
     except Exception as e:
-        logger.error(f"✗ Metrics sanity tests failed: {e}")
+        logger.error(f"Metrics sanity tests failed: {e}")
         return False
 
 
@@ -129,14 +129,14 @@ def test_determinism():
         
         # Should be identical
         if np.allclose(rand1, rand2):
-            logger.info("✓ Determinism tests passed")
+            logger.info("Determinism tests passed")
             return True
         else:
-            logger.error("✗ Determinism tests failed: results not identical")
+            logger.error("Determinism tests failed: results not identical")
             return False
             
     except Exception as e:
-        logger.error(f"✗ Determinism tests failed: {e}")
+        logger.error(f"Determinism tests failed: {e}")
         return False
 
 
@@ -158,14 +158,14 @@ def test_data_quality():
         results = checker.check_data_quality(data)
         
         if results['passed']:
-            logger.info("✓ Data quality tests passed")
+            logger.info("Data quality tests passed")
             return True
         else:
-            logger.error(f"✗ Data quality tests failed: {results['issues']}")
+            logger.error(f"Data quality tests failed: {results['issues']}")
             return False
             
     except Exception as e:
-        logger.error(f"✗ Data quality tests failed: {e}")
+        logger.error(f"Data quality tests failed: {e}")
         return False
 
 
@@ -190,11 +190,11 @@ def test_edge_cases():
         costs = pd.Series(np.random.randn(100) * 0.05)    # 5% daily costs
         cost_check = checker.check_pathological_costs(returns, costs)
         
-        logger.info("✓ Edge case tests passed")
+        logger.info("Edge case tests passed")
         return True
         
     except Exception as e:
-        logger.error(f"✗ Edge case tests failed: {e}")
+        logger.error(f"Edge case tests failed: {e}")
         return False
 
 
@@ -218,14 +218,14 @@ def test_fail_fast_gates():
         gates_passed = check_fail_fast_gates(test_results, gates)
         
         if gates_passed:
-            logger.info("✓ Fail-fast gates tests passed")
+            logger.info("Fail-fast gates tests passed")
             return True
         else:
-            logger.error("✗ Fail-fast gates tests failed")
+            logger.error("Fail-fast gates tests failed")
             return False
             
     except Exception as e:
-        logger.error(f"✗ Fail-fast gates tests failed: {e}")
+        logger.error(f"Fail-fast gates tests failed: {e}")
         return False
 
 
@@ -281,16 +281,16 @@ def test_real_data_pipeline():
         )
         
         if results['overall_passed']:
-            logger.info("✓ Real data pipeline tests passed")
+            logger.info("Real data pipeline tests passed")
             logger.info(f"  Data manifest: {manifest['data_hash']}")
             logger.info(f"  Config fingerprint: {fingerprint['config_hash']}")
             return True
         else:
-            logger.error(f"✗ Real data pipeline tests failed: {results['issues']}")
+            logger.error(f"Real data pipeline tests failed: {results['issues']}")
             return False
             
     except Exception as e:
-        logger.error(f"✗ Real data pipeline tests failed: {e}")
+        logger.error(f"Real data pipeline tests failed: {e}")
         return False
 
 
@@ -325,13 +325,13 @@ def main():
             if test_func():
                 passed += 1
                 results[test_name] = "PASSED"
-                logger.info(f"✓ {test_name} PASSED")
+                logger.info(f"{test_name} PASSED")
             else:
                 results[test_name] = "FAILED"
-                logger.error(f"✗ {test_name} FAILED")
+                logger.error(f"{test_name} FAILED")
         except Exception as e:
             results[test_name] = f"FAILED: {e}"
-            logger.error(f"✗ {test_name} FAILED with exception: {e}")
+            logger.error(f"{test_name} FAILED with exception: {e}")
     
     # Summary
     logger.info("\n" + "=" * 60)
@@ -339,16 +339,16 @@ def main():
     logger.info("=" * 60)
     
     for test_name, result in results.items():
-        status = "✓" if "PASSED" in result else "✗"
+        status = "PASS" if "PASSED" in result else "FAIL"
         logger.info(f"{status} {test_name}: {result}")
     
     logger.info(f"\nOverall: {passed}/{total} tests passed")
     
     if passed == total:
-        logger.info("🎉 All sanity checks passed! System is ready for production.")
+        logger.info("All sanity checks passed! System is ready for production.")
         return 0
     else:
-        logger.error(f"❌ {total - passed} tests failed. Please fix issues before proceeding.")
+        logger.error(f"{total - passed} tests failed. Please fix issues before proceeding.")
         return 1
 
 

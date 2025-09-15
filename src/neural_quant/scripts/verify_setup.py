@@ -27,10 +27,10 @@ def test_imports():
         import yfinance as yf
         import mlflow
         import streamlit as st
-        logger.info("✓ All core dependencies imported successfully")
+        logger.info("All core dependencies imported successfully")
         return True
     except ImportError as e:
-        logger.error(f"✗ Import error: {e}")
+        logger.error(f"Import error: {e}")
         return False
 
 def test_config():
@@ -39,13 +39,13 @@ def test_config():
     
     try:
         config = get_config()
-        logger.info(f"✓ Configuration loaded successfully")
+        logger.info(f"Configuration loaded successfully")
         logger.info(f"  Environment: {config.environment}")
         logger.info(f"  MLflow URI: {config.mlflow.tracking_uri}")
         logger.info(f"  Default symbols: {config.trading.default_symbols}")
         return True
     except Exception as e:
-        logger.error(f"✗ Configuration error: {e}")
+        logger.error(f"Configuration error: {e}")
         return False
 
 def test_mlflow():
@@ -57,10 +57,10 @@ def test_mlflow():
         mlflow.set_tracking_uri("sqlite:///mlflow.db")
         with mlflow.start_run():
             mlflow.log_param("test", "value")
-        logger.info("✓ MLflow connection successful")
+        logger.info("MLflow connection successful")
         return True
     except Exception as e:
-        logger.error(f"✗ MLflow error: {e}")
+        logger.error(f"MLflow error: {e}")
         return False
 
 def test_data_loading():
@@ -70,12 +70,12 @@ def test_data_loading():
     try:
         data = load_yf_data(['AAPL'], '2023-01-01', '2023-12-31', '1d')
         if data.empty:
-            logger.warning("⚠ No data loaded (this might be normal)")
+            logger.warning("No data loaded (this might be normal)")
         else:
-            logger.info(f"✓ Data loading successful: {len(data)} records")
+            logger.info(f"Data loading successful: {len(data)} records")
         return True
     except Exception as e:
-        logger.error(f"✗ Data loading error: {e}")
+        logger.error(f"Data loading error: {e}")
         return False
 
 def test_strategy():
@@ -84,10 +84,10 @@ def test_strategy():
     
     try:
         strategy = MovingAverageCrossover(ma_fast=10, ma_slow=30, threshold=0.0)
-        logger.info("✓ Strategy initialization successful")
+        logger.info("Strategy initialization successful")
         return True
     except Exception as e:
-        logger.error(f"✗ Strategy error: {e}")
+        logger.error(f"Strategy error: {e}")
         return False
 
 def test_backtester():
@@ -96,10 +96,10 @@ def test_backtester():
     
     try:
         backtester = Backtester(initial_capital=100000, commission=0.001, slippage=0.0005)
-        logger.info("✓ Backtester initialization successful")
+        logger.info("Backtester initialization successful")
         return True
     except Exception as e:
-        logger.error(f"✗ Backtester error: {e}")
+        logger.error(f"Backtester error: {e}")
         return False
 
 def main():
@@ -133,10 +133,10 @@ def main():
     logger.info("=" * 80)
     
     if passed == total:
-        logger.info("✓ All tests passed! Neural Quant is ready to use.")
+        logger.info("All tests passed! Neural Quant is ready to use.")
         return 0
     else:
-        logger.error("✗ Some tests failed. Please check the errors above.")
+        logger.error("Some tests failed. Please check the errors above.")
         return 1
 
 if __name__ == "__main__":
