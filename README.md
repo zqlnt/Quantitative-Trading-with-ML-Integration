@@ -1,39 +1,61 @@
 # Neural Quant
 
-A comprehensive quantitative trading framework that combines traditional financial strategies with modern machine learning techniques for systematic trading and portfolio management.
+A professional quantitative trading framework for systematic strategy development, backtesting, and experiment tracking. Built with Python, featuring MLflow integration and a Streamlit dashboard for interactive analysis.
 
-## Overview
+## 🎯 Current Status
 
-Neural Quant is a production-ready quantitative trading system designed for institutional and sophisticated retail traders. The framework provides a unified platform for strategy development, backtesting, risk management, and live trading across multiple asset classes and timeframes.
+**✅ FULLY OPERATIONAL** - All core systems working and tested
 
-### Key Features
+### What's Working
+- **Complete Package Structure**: Modern `src/` layout with proper imports
+- **Data Loading**: Yahoo Finance integration with timezone normalization
+- **Trading Strategies**: Moving Average Crossover strategy with robust signal generation
+- **Backtesting Engine**: High-fidelity backtesting with realistic transaction costs
+- **MLflow Integration**: Automatic experiment tracking and artifact storage
+- **Streamlit Dashboard**: Interactive UI for strategy configuration and results analysis
+- **Timezone Handling**: Comprehensive timezone normalization for daily/intraday data
+- **Testing Suite**: Unit tests for all major components
 
-- **Multi-Strategy Framework**: Support for momentum, mean reversion, and machine learning-based strategies
-- **Advanced ML Integration**: LSTM, Transformer, and ensemble models for predictive trading
-- **Comprehensive Backtesting**: High-fidelity backtesting with realistic transaction costs and slippage
-- **Risk Management**: Built-in position sizing, stop-loss, and portfolio-level risk controls
-- **Multi-Asset Support**: Equities, ETFs, and crypto trading capabilities
-- **Production Ready**: Paper trading and live trading with multiple broker integrations
-- **Experiment Tracking**: MLflow integration for strategy performance monitoring
-- **Modular Architecture**: Extensible design for custom strategies and data sources
+### What's Implemented
+- **Core Framework**: Backtesting engine, metrics calculation, data loaders
+- **Strategy System**: Momentum-based strategies with configurable parameters
+- **Experiment Tracking**: MLflow integration with parameter/metric logging
+- **Web Interface**: Streamlit dashboard for interactive strategy testing
+- **Data Pipeline**: Yahoo Finance data loading with proper timezone handling
+- **Configuration System**: YAML-based configuration management
 
-## Package Structure
+### What's Ready for Development
+- **Additional Strategies**: Mean reversion, ML-based strategies
+- **Live Trading**: Broker integration for paper/live trading
+- **Advanced Analytics**: Additional performance metrics and risk measures
+- **Multi-Asset Support**: Extended asset class coverage
+
+## 📁 Package Structure
 
 Neural Quant uses a modern Python package structure with `src/` layout:
 
 ```
 neural-quant/
 ├── pyproject.toml              # Package configuration
+├── requirements.txt            # Dependencies
 ├── src/
 │   └── neural_quant/           # Main package
 │       ├── core/               # Backtesting engine, metrics
-│       ├── data/               # Data loaders (yfinance, etc.)
+│       │   ├── backtest.py     # High-fidelity backtesting
+│       │   └── metrics.py      # Performance metrics
+│       ├── data/               # Data loaders
+│       │   └── yf_loader.py    # Yahoo Finance integration
 │       ├── strategies/         # Trading strategies
+│       │   └── momentum.py     # MA Crossover strategy
 │       ├── scripts/            # Command-line tools
-│       └── utils/              # Utilities and configuration
+│       │   ├── run_strategy.py # Strategy execution
+│       │   └── verify_setup.py # Setup verification
+│       ├── ui/                 # User interface
+│       │   └── app.py          # Streamlit dashboard
+│       └── utils/              # Utilities
+│           └── time_utils.py   # Timezone handling
 ├── configs/                    # Configuration files
 ├── tests/                      # Test suite
-├── app.py                      # Streamlit dashboard
 └── README.md                   # This file
 ```
 
@@ -64,17 +86,41 @@ neural-quant/
    pip install -r requirements.txt
    ```
 
-4. **Start MLflow tracking server**
+4. **Install package in development mode**
    ```bash
-   source venv/bin/activate
+   pip install -e .
+   ```
+
+5. **Verify installation**
+   ```bash
+   python -m neural_quant.scripts.verify_setup
+   ```
+
+### 🎮 Using the Streamlit Dashboard
+
+The easiest way to get started is with the interactive Streamlit dashboard:
+
+1. **Start the dashboard**
+   ```bash
+   streamlit run src/neural_quant/ui/app.py --server.port 8502
+   ```
+
+2. **Open in browser**
+   - Navigate to http://localhost:8502
+   - Configure your strategy parameters in the sidebar
+   - Click "Run Backtest" to execute and analyze results
+
+### 📊 Using MLflow for Experiment Tracking
+
+1. **Start MLflow UI**
+   ```bash
    mlflow ui --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns --host 0.0.0.0 --port 5000
    ```
 
-5. **Launch the Streamlit dashboard**
-   ```bash
-   source venv/bin/activate
-   streamlit run app.py
-   ```
+2. **View experiments**
+   - Navigate to http://localhost:5000
+   - Browse all backtest runs and results
+   - Compare strategy performance across different parameters
 
 6. **Run your first strategy**
    ```bash
@@ -440,6 +486,68 @@ mypy src/
 - **Storage**: 10GB+ for data and experiments
 - **Network**: Stable internet for data feeds
 
+## 📋 Project Summary
+
+### ✅ What's Working (Fully Operational)
+
+**Core Framework:**
+- ✅ **Package Structure**: Modern `src/` layout with proper Python imports
+- ✅ **Data Loading**: Yahoo Finance integration with timezone normalization
+- ✅ **Backtesting Engine**: High-fidelity backtesting with realistic transaction costs
+- ✅ **Strategy System**: Moving Average Crossover strategy with robust signal generation
+- ✅ **MLflow Integration**: Automatic experiment tracking and artifact storage
+- ✅ **Streamlit Dashboard**: Interactive UI for strategy configuration and analysis
+- ✅ **Timezone Handling**: Comprehensive timezone normalization for daily/intraday data
+- ✅ **Testing Suite**: Unit tests for all major components
+
+**User Interface:**
+- ✅ **Streamlit Dashboard**: Clean, professional interface at http://localhost:8502
+- ✅ **Sidebar Configuration**: Market data, strategy parameters, transaction costs
+- ✅ **Results Display**: Metrics, charts, trade logs, MLflow integration
+- ✅ **MLflow UI**: Experiment tracking at http://localhost:5000
+
+**Data & Strategies:**
+- ✅ **Yahoo Finance Data**: Real-time and historical market data
+- ✅ **Moving Average Strategy**: Configurable fast/slow MA periods and thresholds
+- ✅ **Transaction Costs**: Realistic commission and slippage modeling
+- ✅ **Performance Metrics**: Sharpe ratio, max drawdown, total return, etc.
+
+### 🔧 Technical Implementation
+
+**Architecture:**
+- Modern Python package structure with `pyproject.toml`
+- Absolute imports with `python -m` module execution
+- Comprehensive error handling and logging
+- Timezone-aware data processing
+- MLflow experiment tracking with SQLite backend
+
+**Key Files:**
+- `src/neural_quant/core/backtest.py` - High-fidelity backtesting engine
+- `src/neural_quant/strategies/momentum.py` - Moving Average Crossover strategy
+- `src/neural_quant/data/yf_loader.py` - Yahoo Finance data loader
+- `src/neural_quant/ui/app.py` - Streamlit dashboard
+- `src/neural_quant/utils/time_utils.py` - Timezone handling utilities
+
+### 🚀 Ready for Development
+
+**Immediate Extensions:**
+- Additional trading strategies (mean reversion, ML-based)
+- Extended asset class support (crypto, forex, commodities)
+- Advanced risk management features
+- Live trading integration with brokers
+
+**No API Keys Required:**
+- Uses free Yahoo Finance data
+- Local MLflow tracking (SQLite)
+- No external service dependencies
+
+### 🎯 Getting Started
+
+1. **Quick Start**: Use the Streamlit dashboard for interactive strategy testing
+2. **Command Line**: Use `python -m neural_quant.scripts.run_strategy` for batch processing
+3. **Experiment Tracking**: Use MLflow UI to analyze and compare results
+4. **Development**: Extend with custom strategies and data sources
+
 ## Contributing
 
 1. Fork the repository
@@ -473,12 +581,15 @@ This software is for educational and research purposes only. Trading involves su
 
 ## Changelog
 
-### v1.0.0 (2024-12-01)
-- Initial release
-- Core strategy framework
-- MLflow integration
-- Basic backtesting engine
-- Paper trading support
+### v0.1.0 (Current)
+- ✅ Complete package structure with `src/` layout
+- ✅ High-fidelity backtesting engine with transaction costs
+- ✅ Moving Average Crossover strategy implementation
+- ✅ Yahoo Finance data integration with timezone handling
+- ✅ MLflow experiment tracking and artifact storage
+- ✅ Streamlit dashboard for interactive analysis
+- ✅ Comprehensive testing suite
+- ✅ Professional documentation and README
 
 ---
 
