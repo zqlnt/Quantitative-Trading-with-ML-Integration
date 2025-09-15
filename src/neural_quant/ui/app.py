@@ -476,6 +476,28 @@ with st.sidebar:
                                        help="Resample trades (P&L) or returns series")
     
     st.markdown("---")
+    st.subheader("Regime Filter")
+    
+    # Regime filter toggle
+    enable_regime_filter = st.checkbox("Enable Regime Filter", 
+                                     help="Only trade when market proxy is in specified regime")
+    
+    if enable_regime_filter:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            regime_proxy = st.text_input("Market Proxy Symbol", 
+                                       value="SPY", 
+                                       help="Symbol to use as market proxy (e.g., SPY, ^GSPC)")
+        
+        with col2:
+            regime_rule = st.selectbox("Regime Rule",
+                                     ["Bull only (proxy > SMA(200))", 
+                                      "Bear only (proxy < SMA(200))", 
+                                      "Both (no filter)"],
+                                     help="Trading rule based on proxy regime")
+    
+    st.markdown("---")
     run_btn = st.button("Run Backtest", width='stretch')
     
     # AI Assistant Section
@@ -593,6 +615,16 @@ with tab1:
                         resample_method=bootstrap_method
                     )
                 
+                # Create regime filter configuration if enabled
+                regime_filter_config = None
+                if enable_regime_filter:
+                    from neural_quant.analysis.regime_filter import create_regime_filter_config
+                    regime_filter_config = create_regime_filter_config(
+                        enabled=True,
+                        proxy_symbol=regime_proxy,
+                        regime_rule=regime_rule
+                    )
+                
                 # Run appropriate backtest based on strategy type
                 if is_portfolio_strategy:
                     # Portfolio backtest
@@ -603,7 +635,9 @@ with tab1:
                         enable_mcpt=enable_mcpt,
                         mcpt_config=mcpt_config,
                         enable_bootstrap=enable_bootstrap,
-                        bootstrap_config=bootstrap_config
+                        bootstrap_config=bootstrap_config,
+                        enable_regime_filter=enable_regime_filter,
+                        regime_filter_config=regime_filter_config
                     )
                     results = bt.run_portfolio_backtest(data_dict, strat, str(start), str(end))
                 else:
@@ -625,14 +659,27 @@ with tab1:
                             f"{ticker}_volume": "volume"
                         })
                     
+                    # Create regime filter configuration if enabled
+                    regime_filter_config = None
+                    if enable_regime_filter:
+                        from neural_quant.analysis.regime_filter import create_regime_filter_config
+                        regime_filter_config = create_regime_filter_config(
+                            enabled=True,
+                            proxy_symbol=regime_proxy,
+                            regime_rule=regime_rule
+                        )
+                    
                     bt = Backtester(
                         commission=fee_bps/10000, 
                         slippage=slip_bps/10000,
                         enable_mcpt=enable_mcpt,
                         mcpt_config=mcpt_config,
                         enable_bootstrap=enable_bootstrap,
-                        bootstrap_config=bootstrap_config
+                        bootstrap_config=bootstrap_config,
+                        enable_regime_filter=enable_regime_filter,
+                        regime_filter_config=regime_filter_config
                     )
+                    
                     results = bt.run_backtest(df_prepared, strat, str(start), str(end))
                 
                 # Extract results
@@ -661,6 +708,12 @@ with tab1:
                 
                 # Display results
                 st.success("Backtest completed successfully!")
+                
+                # Display regime filter information if enabled
+                if enable_regime_filter and 'regime_hit_rate' in metrics:
+                    st.info(f"🎯 **Regime Filter Active**: {regime_rule} using {regime_proxy} | "
+                           f"Trading Days: {metrics.get('regime_hit_rate', 0):.1%} "
+                           f"({metrics.get('regime_trading_days', 0)}/{metrics.get('regime_total_days', 0)})")
                 
                 # Styled metric cards
                 st.subheader("Performance Dashboard")

@@ -27,6 +27,12 @@ from .walkforward import (
     run_walkforward_analysis
 )
 
+from .regime_filter import (
+    RegimeFilter,
+    RegimeFilterConfig,
+    create_regime_filter_config
+)
+
 __all__ = [
     'MonteCarloPermutationTester',
     'MCPTConfig', 
@@ -39,5 +45,8 @@ __all__ = [
     'WalkForwardAnalyzer',
     'WalkForwardConfig',
     'WalkForwardWindow',
-    'run_walkforward_analysis'
+    'run_walkforward_analysis',
+    'RegimeFilter',
+    'RegimeFilterConfig',
+    'create_regime_filter_config'
 ]

@@ -15,6 +15,7 @@ from ..utils.time_utils import ensure_tz_naive_daily_index, is_daily_data
 from ..strategies.base.strategy_base import StrategyBase
 from ..analysis.mcpt import MonteCarloPermutationTester, MCPTConfig
 from ..analysis.bootstrap import BootstrapAnalyzer, BootstrapConfig
+from ..analysis.regime_filter import RegimeFilter, RegimeFilterConfig
 
 
 class PortfolioBacktester(Backtester):
@@ -28,7 +29,9 @@ class PortfolioBacktester(Backtester):
                  enable_mcpt: bool = True,
                  mcpt_config: MCPTConfig = None,
                  enable_bootstrap: bool = True,
-                 bootstrap_config: BootstrapConfig = None):
+                 bootstrap_config: BootstrapConfig = None,
+                 enable_regime_filter: bool = False,
+                 regime_filter_config: RegimeFilterConfig = None):
         """
         Initialize the portfolio backtester.
         
@@ -41,8 +44,10 @@ class PortfolioBacktester(Backtester):
             mcpt_config: Configuration for MCPT testing
             enable_bootstrap: Whether to run Bootstrap Confidence Intervals
             bootstrap_config: Configuration for Bootstrap analysis
+            enable_regime_filter: Whether to enable regime filtering
+            regime_filter_config: Configuration for regime filtering
         """
-        super().__init__(initial_capital, commission, slippage, enable_mcpt, mcpt_config, enable_bootstrap, bootstrap_config)
+        super().__init__(initial_capital, commission, slippage, enable_mcpt, mcpt_config, enable_bootstrap, bootstrap_config, enable_regime_filter, regime_filter_config)
         self.max_positions = max_positions
         self.symbols = []
     

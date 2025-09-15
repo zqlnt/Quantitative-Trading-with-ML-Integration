@@ -9,6 +9,7 @@ from datetime import datetime
 from ..utils.time_utils import ensure_tz_naive_daily_index, is_daily_data
 from ..analysis.mcpt import MonteCarloPermutationTester, MCPTConfig
 from ..analysis.bootstrap import BootstrapAnalyzer, BootstrapConfig
+from ..analysis.regime_filter import RegimeFilter, RegimeFilterConfig
 
 class Backtester:
     """High-fidelity backtesting engine with realistic transaction costs."""
@@ -20,7 +21,9 @@ class Backtester:
                  enable_mcpt: bool = True,
                  mcpt_config: MCPTConfig = None,
                  enable_bootstrap: bool = True,
-                 bootstrap_config: BootstrapConfig = None):
+                 bootstrap_config: BootstrapConfig = None,
+                 enable_regime_filter: bool = False,
+                 regime_filter_config: RegimeFilterConfig = None):
         """
         Initialize the backtester.
         
@@ -32,6 +35,8 @@ class Backtester:
             mcpt_config: Configuration for MCPT testing
             enable_bootstrap: Whether to run Bootstrap Confidence Intervals
             bootstrap_config: Configuration for Bootstrap analysis
+            enable_regime_filter: Whether to enable regime filtering
+            regime_filter_config: Configuration for regime filtering
         """
         self.initial_capital = initial_capital
         self.commission = commission
@@ -40,6 +45,9 @@ class Backtester:
         self.mcpt_config = mcpt_config or MCPTConfig()
         self.enable_bootstrap = enable_bootstrap
         self.bootstrap_config = bootstrap_config or BootstrapConfig()
+        self.enable_regime_filter = enable_regime_filter
+        self.regime_filter_config = regime_filter_config or RegimeFilterConfig()
+        self.regime_filter = None
         self.reset()
     
     def reset(self):
@@ -85,6 +93,12 @@ class Backtester:
             if not success:
                 return {'error': 'Strategy initialization failed'}
         
+        # Initialize regime filter if enabled
+        if self.enable_regime_filter:
+            self.regime_filter = RegimeFilter(self.regime_filter_config)
+            if not self.regime_filter.load_proxy_data(start_date, end_date):
+                return {'error': 'Failed to load regime filter proxy data'}
+        
         # Generate signals
         signals = strategy.generate_signals(data)
         
@@ -115,6 +129,10 @@ class Backtester:
     
     def _process_signals(self, date, row, signals):
         """Process trading signals for the current date."""
+        # Check regime filter first
+        if self.regime_filter and not self.regime_filter.should_trade(date):
+            return  # Skip trading if regime filter blocks it
+        
         # Find signals for this date
         date_signals = [s for s in signals if s.timestamp.date() == date.date()]
         
@@ -319,15 +337,26 @@ class Backtester:
             
             with mlflow.start_run() as run:
                 # Log parameters
-                mlflow.log_params({
+                params = {
                     'strategy': strategy.__class__.__name__,
                     'initial_capital': self.initial_capital,
                     'commission': self.commission,
                     'slippage': self.slippage
-                })
+                }
+                
+                # Add regime filter parameters if enabled
+                if self.enable_regime_filter and self.regime_filter:
+                    regime_summary = self.regime_filter.get_regime_summary()
+                    params.update({
+                        'regime_filter_enabled': regime_summary['regime_filter_enabled'],
+                        'regime_proxy_symbol': regime_summary['proxy_symbol'],
+                        'regime_rule': regime_summary['regime_rule']
+                    })
+                
+                mlflow.log_params(params)
                 
                 # Log metrics
-                mlflow.log_metrics({
+                metrics = {
                     'total_return': results.get('total_return', 0),
                     'annualized_return': results.get('annualized_return', 0),
                     'volatility': results.get('volatility', 0),
@@ -335,7 +364,18 @@ class Backtester:
                     'max_drawdown': results.get('max_drawdown', 0),
                     'total_trades': results.get('total_trades', 0),
                     'win_rate': results.get('win_rate', 0)
-                })
+                }
+                
+                # Add regime filter metrics if enabled
+                if self.enable_regime_filter and self.regime_filter:
+                    regime_summary = self.regime_filter.get_regime_summary()
+                    metrics.update({
+                        'regime_hit_rate': regime_summary['regime_hit_rate'],
+                        'regime_trading_days': regime_summary['trading_days'],
+                        'regime_total_days': regime_summary['total_days']
+                    })
+                
+                mlflow.log_metrics(metrics)
                 
                 # Log equity curve
                 if 'equity_curve' in results:
