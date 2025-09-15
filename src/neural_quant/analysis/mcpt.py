@@ -32,6 +32,7 @@ class MCPTResult:
     is_significant: bool
     significance_level: float = 0.05
     null_values: List[float] = None  # Add null_values for UI visualization
+    confidence_level: float = 0.95  # Add confidence_level for UI compatibility
 
 
 @dataclass
@@ -327,7 +328,8 @@ class MonteCarloPermutationTester:
             confidence_interval=confidence_interval,
             is_significant=is_significant,
             significance_level=self.config.significance_level,
-            null_values=null_values.tolist()
+            null_values=null_values.tolist(),
+            confidence_level=self.config.confidence_level
         )
     
     def get_summary(self) -> pd.DataFrame:

@@ -79,6 +79,12 @@ class Backtester:
         if end_date:
             data = data[data.index <= end_date]
         
+        # Initialize strategy if not already initialized
+        if not strategy.is_initialized:
+            success = strategy.initialize(data)
+            if not success:
+                return {'error': 'Strategy initialization failed'}
+        
         # Generate signals
         signals = strategy.generate_signals(data)
         
@@ -109,16 +115,17 @@ class Backtester:
     
     def _process_signals(self, date, row, signals):
         """Process trading signals for the current date."""
-        if date not in signals:
-            return
+        # Find signals for this date
+        date_signals = [s for s in signals if s.timestamp.date() == date.date()]
         
-        signal = signals[date]
-        
-        for symbol, action in signal.items():
+        for signal in date_signals:
+            symbol = signal.symbol
+            action = signal.signal_type
+            
             if action == 'BUY' and symbol not in self.positions:
-                self._open_position(symbol, row[f'{symbol}_close'] if f'{symbol}_close' in row else row['close'])
+                self._open_position(symbol, signal.price)
             elif action == 'SELL' and symbol in self.positions:
-                self._close_position(symbol, row[f'{symbol}_close'] if f'{symbol}_close' in row else row['close'])
+                self._close_position(symbol, signal.price)
     
     def _open_position(self, symbol: str, price: float):
         """Open a new position."""
