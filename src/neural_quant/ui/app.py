@@ -32,7 +32,8 @@ if run_btn:
 
         strat = MovingAverageCrossover(ma_fast=fast, ma_slow=slow, threshold=threshold/100.0)
         signals = strat.generate_signals(df)
-        bt = Backtester(slippage_bps=slip_bps, fee_bps=fee_bps)
+        # Convert bps to rates (bps / 10000)
+        bt = Backtester(commission=fee_bps/10000, slippage=slip_bps/10000)
         results = bt.run_backtest(df, strat)
         equity = results.get('equity_curve', pd.Series())
         trades = results.get('trades', pd.DataFrame())
