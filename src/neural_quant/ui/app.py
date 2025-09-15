@@ -13,27 +13,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Simple dark mode CSS
-st.markdown("""
-<style>
-    /* Dark theme */
-    .stApp {
-        background-color: #0e1117;
-        color: #ffffff;
-    }
-    
-    .main .block-container {
-        background-color: #0e1117;
-        color: #ffffff;
-    }
-    
-    /* Hide Streamlit branding */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-</style>
-""", unsafe_allow_html=True)
-
 # Main title
 st.title("Neural-Quant")
 st.markdown("Advanced Algorithmic Trading Platform")
