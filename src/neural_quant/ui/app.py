@@ -73,8 +73,16 @@ if run_btn:
                         mlflow.log_metric(k, float(v))
 
                 # Log artifacts
-                equity.to_frame("equity").to_csv("equity.csv")
-                trades.to_csv("trades.csv", index=False)
+                if isinstance(equity, pd.DataFrame):
+                    equity.to_csv("equity.csv")
+                else:
+                    equity.to_frame("equity").to_csv("equity.csv")
+                
+                if isinstance(trades, pd.DataFrame):
+                    trades.to_csv("trades.csv", index=False)
+                else:
+                    pd.DataFrame(trades).to_csv("trades.csv", index=False)
+                
                 mlflow.log_artifact("equity.csv")
                 mlflow.log_artifact("trades.csv")
                 run_url = f"{mlflow.get_tracking_uri().rstrip('/')}/#/experiments/{mlflow.get_experiment_by_name('ma_crossover').experiment_id}/runs/{run.info.run_id}"
@@ -97,7 +105,10 @@ if run_btn:
             col1, col2 = st.columns([2, 1])
             with col1:
                 st.subheader("Equity Curve")
-                st.line_chart(equity)
+                if isinstance(equity, pd.DataFrame):
+                    st.line_chart(equity['equity'])
+                else:
+                    st.line_chart(equity)
             
             with col2:
                 st.subheader("All Metrics")
@@ -110,8 +121,11 @@ if run_btn:
             
             # Trades table
             st.subheader("Trade Log")
-            if not trades.empty:
+            if isinstance(trades, pd.DataFrame) and not trades.empty:
                 st.dataframe(trades, use_container_width=True)
+            elif isinstance(trades, list) and trades:
+                trades_df = pd.DataFrame(trades)
+                st.dataframe(trades_df, use_container_width=True)
             else:
                 st.info("No trades executed during this period.")
             
