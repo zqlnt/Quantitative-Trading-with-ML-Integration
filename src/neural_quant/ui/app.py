@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Professional dark mode CSS
+# Simple dark mode CSS
 st.markdown("""
 <style>
     /* Dark theme */
@@ -25,48 +25,6 @@ st.markdown("""
     .main .block-container {
         background-color: #0e1117;
         color: #ffffff;
-    }
-    
-    /* Sidebar */
-    .css-1d391kg {
-        background-color: #1e1e1e;
-        border-right: 1px solid #333333;
-    }
-    
-    .css-1d391kg .css-1v0mbdj {
-        color: #ffffff;
-    }
-    
-    /* Input styling */
-    .stTextInput > div > div > input,
-    .stNumberInput > div > div > input,
-    .stDateInput > div > div > input {
-        background-color: #262730;
-        border: 1px solid #333333;
-        color: #ffffff;
-        border-radius: 4px;
-    }
-    
-    .stTextInput > div > div > input:focus,
-    .stNumberInput > div > div > input:focus,
-    .stDateInput > div > div > input:focus {
-        border-color: #1a73e8;
-        box-shadow: 0 0 0 1px #1a73e8;
-    }
-    
-    /* Button styling */
-    .stButton > button {
-        background-color: #1a73e8;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 10px 24px;
-        font-weight: 500;
-        width: 100%;
-    }
-    
-    .stButton > button:hover {
-        background-color: #1557b0;
     }
     
     /* Hide Streamlit branding */
