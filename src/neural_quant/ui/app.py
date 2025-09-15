@@ -6,42 +6,31 @@ from neural_quant.data.yf_loader import load_yf_data
 from neural_quant.strategies.momentum import MovingAverageCrossover
 from neural_quant.core.backtest import Backtester
 
-# Page config with professional theme
+# Page config
 st.set_page_config(
     page_title="Neural-Quant", 
     layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={
-        'Get Help': 'https://github.com/your-repo/neural-quant',
-        'Report a bug': 'https://github.com/your-repo/neural-quant/issues',
-        'About': "Neural-Quant: Advanced Algorithmic Trading Platform"
-    }
+    initial_sidebar_state="expanded"
 )
 
-# Custom CSS for professional Google/iOS style
+# Custom CSS for clean light mode
 st.markdown("""
 <style>
     /* Import Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
-    /* Root variables for professional theming */
+    /* Root variables for clean light theme */
     :root {
         --primary-color: #1a73e8;
         --primary-hover: #1557b0;
         --success-color: #34a853;
-        --warning-color: #fbbc04;
-        --error-color: #ea4335;
         --text-primary: #202124;
         --text-secondary: #5f6368;
-        --text-tertiary: #9aa0a6;
         --bg-primary: #ffffff;
         --bg-secondary: #f8f9fa;
-        --bg-tertiary: #f1f3f4;
         --border-color: #dadce0;
         --border-hover: #1a73e8;
-        --shadow-sm: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
-        --shadow-md: 0 1px 2px 0 rgba(60,64,67,0.3), 0 2px 6px 2px rgba(60,64,67,0.15);
-        --shadow-lg: 0 2px 4px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+        --shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     
     /* Global styles */
@@ -129,12 +118,7 @@ st.markdown("""
         border-radius: 8px;
         padding: 20px;
         margin: 8px 0;
-        box-shadow: var(--shadow-sm);
-        transition: box-shadow 0.2s ease;
-    }
-    
-    .metric-card:hover {
-        box-shadow: var(--shadow-md);
+        box-shadow: var(--shadow);
     }
     
     .metric-title {
@@ -162,7 +146,7 @@ st.markdown("""
         border-radius: 8px;
         padding: 20px;
         margin: 8px 0;
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow);
     }
     
     /* Success/Info messages */
@@ -175,7 +159,7 @@ st.markdown("""
     }
     
     .stInfo {
-        background-color: var(--bg-tertiary);
+        background-color: var(--bg-secondary);
         border: 1px solid var(--border-color);
         border-radius: 4px;
         color: var(--text-primary);
@@ -186,7 +170,7 @@ st.markdown("""
         background: var(--bg-primary);
         border: 1px solid var(--border-color);
         border-radius: 8px;
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow);
     }
     
     /* Spinner styling */
@@ -199,46 +183,6 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Sidebar toggle button */
-    .sidebar-toggle {
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        z-index: 1000;
-        background: var(--primary-color);
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 8px 12px;
-        font-family: 'Inter', sans-serif;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        box-shadow: var(--shadow-md);
-        transition: all 0.2s ease;
-    }
-    
-    .sidebar-toggle:hover {
-        background: var(--primary-hover);
-        transform: translateY(-1px);
-    }
-    
-    /* Sidebar state indicator */
-    .sidebar-state {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-        background: var(--bg-primary);
-        color: var(--text-secondary);
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
-        padding: 8px 12px;
-        font-family: 'Inter', sans-serif;
-        font-size: 12px;
-        font-weight: 500;
-        box-shadow: var(--shadow-sm);
-    }
     
     /* Section headers */
     .section-header {
@@ -258,7 +202,7 @@ st.markdown("""
         border-radius: 8px;
         padding: 20px;
         margin: 16px 0;
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow);
     }
     
     /* Custom scrollbar */
@@ -281,13 +225,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Sidebar toggle button
-st.markdown("""
-<button class="sidebar-toggle" onclick="document.querySelector('[data-testid=stSidebar]').style.display = 'block'; document.querySelector('.sidebar-toggle').style.display = 'none';">
-    ☰ Open Sidebar
-</button>
-<div class="sidebar-state">Sidebar: Open</div>
-""", unsafe_allow_html=True)
 
 # Main title
 st.markdown('<h1 class="main-title">Neural-Quant</h1>', unsafe_allow_html=True)
