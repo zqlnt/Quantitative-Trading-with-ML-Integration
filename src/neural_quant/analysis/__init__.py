@@ -33,6 +33,12 @@ from .regime_filter import (
     create_regime_filter_config
 )
 
+from .volatility_targeting import (
+    VolatilityTargeting,
+    VolatilityTargetingConfig,
+    create_volatility_targeting_config
+)
+
 __all__ = [
     'MonteCarloPermutationTester',
     'MCPTConfig', 
@@ -48,5 +54,8 @@ __all__ = [
     'run_walkforward_analysis',
     'RegimeFilter',
     'RegimeFilterConfig',
-    'create_regime_filter_config'
+    'create_regime_filter_config',
+    'VolatilityTargeting',
+    'VolatilityTargetingConfig',
+    'create_volatility_targeting_config'
 ]

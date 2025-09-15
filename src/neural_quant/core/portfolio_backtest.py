@@ -16,6 +16,7 @@ from ..strategies.base.strategy_base import StrategyBase
 from ..analysis.mcpt import MonteCarloPermutationTester, MCPTConfig
 from ..analysis.bootstrap import BootstrapAnalyzer, BootstrapConfig
 from ..analysis.regime_filter import RegimeFilter, RegimeFilterConfig
+from ..analysis.volatility_targeting import VolatilityTargeting, VolatilityTargetingConfig
 
 
 class PortfolioBacktester(Backtester):
@@ -31,7 +32,9 @@ class PortfolioBacktester(Backtester):
                  enable_bootstrap: bool = True,
                  bootstrap_config: BootstrapConfig = None,
                  enable_regime_filter: bool = False,
-                 regime_filter_config: RegimeFilterConfig = None):
+                 regime_filter_config: RegimeFilterConfig = None,
+                 enable_vol_targeting: bool = False,
+                 vol_targeting_config: VolatilityTargetingConfig = None):
         """
         Initialize the portfolio backtester.
         
@@ -46,8 +49,10 @@ class PortfolioBacktester(Backtester):
             bootstrap_config: Configuration for Bootstrap analysis
             enable_regime_filter: Whether to enable regime filtering
             regime_filter_config: Configuration for regime filtering
+            enable_vol_targeting: Whether to enable volatility targeting
+            vol_targeting_config: Configuration for volatility targeting
         """
-        super().__init__(initial_capital, commission, slippage, enable_mcpt, mcpt_config, enable_bootstrap, bootstrap_config, enable_regime_filter, regime_filter_config)
+        super().__init__(initial_capital, commission, slippage, enable_mcpt, mcpt_config, enable_bootstrap, bootstrap_config, enable_regime_filter, regime_filter_config, enable_vol_targeting, vol_targeting_config)
         self.max_positions = max_positions
         self.symbols = []
     

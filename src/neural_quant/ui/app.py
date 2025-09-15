@@ -498,6 +498,31 @@ with st.sidebar:
                                      help="Trading rule based on proxy regime")
     
     st.markdown("---")
+    st.subheader("Volatility Targeting")
+    
+    # Volatility targeting toggle
+    enable_vol_targeting = st.checkbox("Enable Volatility Targeting", 
+                                     help="Scale portfolio exposure to hit target annual volatility")
+    
+    if enable_vol_targeting:
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            target_vol = st.number_input("Target Volatility (%)", 
+                                       min_value=1.0, max_value=50.0, value=10.0, step=1.0,
+                                       help="Target annual volatility percentage") / 100.0
+        
+        with col2:
+            lookback_window = st.number_input("Lookback Window (days)", 
+                                            min_value=5, max_value=100, value=20, step=1,
+                                            help="Window for realized volatility calculation")
+        
+        with col3:
+            scale_cap = st.number_input("Scale Cap", 
+                                      min_value=0.5, max_value=5.0, value=2.0, step=0.1,
+                                      help="Maximum scaling factor")
+    
+    st.markdown("---")
     run_btn = st.button("Run Backtest", width='stretch')
     
     # AI Assistant Section
@@ -625,6 +650,17 @@ with tab1:
                         regime_rule=regime_rule
                     )
                 
+                # Create volatility targeting configuration if enabled
+                vol_targeting_config = None
+                if enable_vol_targeting:
+                    from neural_quant.analysis.volatility_targeting import create_volatility_targeting_config
+                    vol_targeting_config = create_volatility_targeting_config(
+                        enabled=True,
+                        target_vol=target_vol,
+                        lookback_window=lookback_window,
+                        scale_cap=scale_cap
+                    )
+                
                 # Run appropriate backtest based on strategy type
                 if is_portfolio_strategy:
                     # Portfolio backtest
@@ -637,7 +673,9 @@ with tab1:
                         enable_bootstrap=enable_bootstrap,
                         bootstrap_config=bootstrap_config,
                         enable_regime_filter=enable_regime_filter,
-                        regime_filter_config=regime_filter_config
+                        regime_filter_config=regime_filter_config,
+                        enable_vol_targeting=enable_vol_targeting,
+                        vol_targeting_config=vol_targeting_config
                     )
                     results = bt.run_portfolio_backtest(data_dict, strat, str(start), str(end))
                 else:
@@ -669,6 +707,17 @@ with tab1:
                             regime_rule=regime_rule
                         )
                     
+                    # Create volatility targeting configuration if enabled
+                    vol_targeting_config = None
+                    if enable_vol_targeting:
+                        from neural_quant.analysis.volatility_targeting import create_volatility_targeting_config
+                        vol_targeting_config = create_volatility_targeting_config(
+                            enabled=True,
+                            target_vol=target_vol,
+                            lookback_window=lookback_window,
+                            scale_cap=scale_cap
+                        )
+                    
                     bt = Backtester(
                         commission=fee_bps/10000, 
                         slippage=slip_bps/10000,
@@ -677,7 +726,9 @@ with tab1:
                         enable_bootstrap=enable_bootstrap,
                         bootstrap_config=bootstrap_config,
                         enable_regime_filter=enable_regime_filter,
-                        regime_filter_config=regime_filter_config
+                        regime_filter_config=regime_filter_config,
+                        enable_vol_targeting=enable_vol_targeting,
+                        vol_targeting_config=vol_targeting_config
                     )
                     
                     results = bt.run_backtest(df_prepared, strat, str(start), str(end))
@@ -714,6 +765,13 @@ with tab1:
                     st.info(f"🎯 **Regime Filter Active**: {regime_rule} using {regime_proxy} | "
                            f"Trading Days: {metrics.get('regime_hit_rate', 0):.1%} "
                            f"({metrics.get('regime_trading_days', 0)}/{metrics.get('regime_total_days', 0)})")
+                
+                # Display volatility targeting information if enabled
+                if enable_vol_targeting and 'volatility_targeting' in results:
+                    vol_info = results['volatility_targeting']
+                    st.info(f"📊 **Volatility Targeting Active**: Target {vol_info['target_vol']:.1%} | "
+                           f"Pre: {vol_info['realized_vol_pre']:.1%} → Post: {vol_info['realized_vol_post']:.1%} | "
+                           f"Avg Scaling: {vol_info['avg_scaling']:.2f}x")
                 
                 # Styled metric cards
                 st.subheader("Performance Dashboard")

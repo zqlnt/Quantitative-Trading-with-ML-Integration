@@ -10,6 +10,7 @@ from ..utils.time_utils import ensure_tz_naive_daily_index, is_daily_data
 from ..analysis.mcpt import MonteCarloPermutationTester, MCPTConfig
 from ..analysis.bootstrap import BootstrapAnalyzer, BootstrapConfig
 from ..analysis.regime_filter import RegimeFilter, RegimeFilterConfig
+from ..analysis.volatility_targeting import VolatilityTargeting, VolatilityTargetingConfig
 
 class Backtester:
     """High-fidelity backtesting engine with realistic transaction costs."""
@@ -23,7 +24,9 @@ class Backtester:
                  enable_bootstrap: bool = True,
                  bootstrap_config: BootstrapConfig = None,
                  enable_regime_filter: bool = False,
-                 regime_filter_config: RegimeFilterConfig = None):
+                 regime_filter_config: RegimeFilterConfig = None,
+                 enable_vol_targeting: bool = False,
+                 vol_targeting_config: VolatilityTargetingConfig = None):
         """
         Initialize the backtester.
         
@@ -37,6 +40,8 @@ class Backtester:
             bootstrap_config: Configuration for Bootstrap analysis
             enable_regime_filter: Whether to enable regime filtering
             regime_filter_config: Configuration for regime filtering
+            enable_vol_targeting: Whether to enable volatility targeting
+            vol_targeting_config: Configuration for volatility targeting
         """
         self.initial_capital = initial_capital
         self.commission = commission
@@ -47,7 +52,10 @@ class Backtester:
         self.bootstrap_config = bootstrap_config or BootstrapConfig()
         self.enable_regime_filter = enable_regime_filter
         self.regime_filter_config = regime_filter_config or RegimeFilterConfig()
+        self.enable_vol_targeting = enable_vol_targeting
+        self.vol_targeting_config = vol_targeting_config or VolatilityTargetingConfig()
         self.regime_filter = None
+        self.vol_targeting = None
         self.reset()
     
     def reset(self):
@@ -99,6 +107,10 @@ class Backtester:
             if not self.regime_filter.load_proxy_data(start_date, end_date):
                 return {'error': 'Failed to load regime filter proxy data'}
         
+        # Initialize volatility targeting if enabled
+        if self.enable_vol_targeting:
+            self.vol_targeting = VolatilityTargeting(self.vol_targeting_config)
+        
         # Generate signals
         signals = strategy.generate_signals(data)
         
@@ -111,6 +123,19 @@ class Backtester:
         
         # Calculate performance metrics
         results = self._calculate_results(data)
+        
+        # Apply volatility targeting if enabled
+        if self.enable_vol_targeting and self.vol_targeting and 'equity_curve' in results:
+            original_equity = results['equity_curve']
+            scaled_equity = self.vol_targeting.scale_equity_curve(original_equity)
+            results['equity_curve'] = scaled_equity
+            
+            # Recalculate metrics with scaled equity curve
+            results = self._calculate_results(data, scaled_equity)
+            
+            # Add volatility targeting metrics
+            vol_summary = self.vol_targeting.get_scaling_summary()
+            results['volatility_targeting'] = vol_summary
         
         # Run MCPT significance testing if enabled
         if self.enable_mcpt and 'equity_curve' in results:
@@ -211,13 +236,18 @@ class Backtester:
             'positions': len(self.positions)
         })
     
-    def _calculate_results(self, data: pd.DataFrame) -> Dict[str, Any]:
+    def _calculate_results(self, data: pd.DataFrame, equity_curve: Optional[pd.Series] = None) -> Dict[str, Any]:
         """Calculate performance metrics."""
-        if not self.equity_curve:
+        if equity_curve is not None:
+            # Use provided equity curve (for volatility targeting)
+            equity_df = pd.DataFrame({'equity': equity_curve})
+            equity_df['returns'] = equity_df['equity'].pct_change()
+        elif not self.equity_curve:
             return {}
-        
-        equity_df = pd.DataFrame(self.equity_curve).set_index('date')
-        equity_df['returns'] = equity_df['equity'].pct_change()
+        else:
+            # Use internal equity curve
+            equity_df = pd.DataFrame(self.equity_curve).set_index('date')
+            equity_df['returns'] = equity_df['equity'].pct_change()
         
         # Calculate metrics
         total_return = (equity_df['equity'].iloc[-1] / self.initial_capital) - 1
@@ -353,6 +383,16 @@ class Backtester:
                         'regime_rule': regime_summary['regime_rule']
                     })
                 
+                # Add volatility targeting parameters if enabled
+                if self.enable_vol_targeting and self.vol_targeting:
+                    vol_summary = self.vol_targeting.get_scaling_summary()
+                    params.update({
+                        'volatility_targeting_enabled': vol_summary['volatility_targeting_enabled'],
+                        'vol_target': vol_summary['target_vol'],
+                        'vol_lookback_window': vol_summary['lookback_window'],
+                        'vol_scale_cap': vol_summary['scale_cap']
+                    })
+                
                 mlflow.log_params(params)
                 
                 # Log metrics
@@ -373,6 +413,16 @@ class Backtester:
                         'regime_hit_rate': regime_summary['regime_hit_rate'],
                         'regime_trading_days': regime_summary['trading_days'],
                         'regime_total_days': regime_summary['total_days']
+                    })
+                
+                # Add volatility targeting metrics if enabled
+                if self.enable_vol_targeting and self.vol_targeting:
+                    vol_summary = self.vol_targeting.get_scaling_summary()
+                    metrics.update({
+                        'realized_vol_pre': vol_summary['realized_vol_pre'],
+                        'realized_vol_post': vol_summary['realized_vol_post'],
+                        'avg_scaling': vol_summary['avg_scaling'],
+                        'vol_reduction': vol_summary['vol_reduction']
                     })
                 
                 mlflow.log_metrics(metrics)
