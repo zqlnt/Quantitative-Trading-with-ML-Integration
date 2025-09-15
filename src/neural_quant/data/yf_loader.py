@@ -4,6 +4,7 @@ import yfinance as yf
 import pandas as pd
 from typing import List, Optional, Dict, Any
 import logging
+from ..utils.time_utils import ensure_tz_naive_daily_index, clamp_to_dates, is_daily_data
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,17 @@ def load_yf_data(symbols: List[str],
             
             # Add symbol column
             data['symbol'] = symbol
+            
+            # Normalize timezone for daily data
+            if timeframe == '1d' or is_daily_data(data):
+                data = ensure_tz_naive_daily_index(data, market="US")
+            else:
+                # For intraday data, normalize to UTC
+                from ..utils.time_utils import normalize_intraday_index
+                data = normalize_intraday_index(data, target_tz="UTC")
+            
+            # Clamp to date range
+            data = clamp_to_dates(data, start_date, end_date)
             
             all_data.append(data)
             logger.info(f"Loaded {len(data)} records for {symbol}")

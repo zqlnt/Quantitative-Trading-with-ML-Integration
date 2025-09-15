@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Any
 import mlflow
 import mlflow.sklearn
 from datetime import datetime
+from ..utils.time_utils import ensure_tz_naive_daily_index, is_daily_data
 
 class Backtester:
     """High-fidelity backtesting engine with realistic transaction costs."""
@@ -53,6 +54,10 @@ class Backtester:
             Dictionary containing backtest results
         """
         self.reset()
+        
+        # Normalize timezone for daily data
+        if is_daily_data(data):
+            data = ensure_tz_naive_daily_index(data, market="US")
         
         # Filter data by date range
         if start_date:
