@@ -39,6 +39,24 @@ from .volatility_targeting import (
     create_volatility_targeting_config
 )
 
+from .allocation_methods import (
+    AllocationMethods,
+    AllocationMethodConfig,
+    create_allocation_method_config
+)
+
+from .position_management import (
+    PositionManager,
+    PositionManagementConfig,
+    create_position_management_config
+)
+
+from .basic_exits import (
+    BasicExits,
+    BasicExitsConfig,
+    create_basic_exits_config
+)
+
 __all__ = [
     'MonteCarloPermutationTester',
     'MCPTConfig', 
@@ -57,5 +75,14 @@ __all__ = [
     'create_regime_filter_config',
     'VolatilityTargeting',
     'VolatilityTargetingConfig',
-    'create_volatility_targeting_config'
+    'create_volatility_targeting_config',
+    'AllocationMethods',
+    'AllocationMethodConfig',
+    'create_allocation_method_config',
+    'PositionManager',
+    'PositionManagementConfig',
+    'create_position_management_config',
+    'BasicExits',
+    'BasicExitsConfig',
+    'create_basic_exits_config'
 ]

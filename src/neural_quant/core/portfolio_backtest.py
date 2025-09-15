@@ -17,6 +17,8 @@ from ..analysis.mcpt import MonteCarloPermutationTester, MCPTConfig
 from ..analysis.bootstrap import BootstrapAnalyzer, BootstrapConfig
 from ..analysis.regime_filter import RegimeFilter, RegimeFilterConfig
 from ..analysis.volatility_targeting import VolatilityTargeting, VolatilityTargetingConfig
+from ..analysis.allocation_methods import AllocationMethods, AllocationMethodConfig
+from ..analysis.position_management import PositionManager, PositionManagementConfig
 
 
 class PortfolioBacktester(Backtester):
@@ -34,7 +36,12 @@ class PortfolioBacktester(Backtester):
                  enable_regime_filter: bool = False,
                  regime_filter_config: RegimeFilterConfig = None,
                  enable_vol_targeting: bool = False,
-                 vol_targeting_config: VolatilityTargetingConfig = None):
+                 vol_targeting_config: VolatilityTargetingConfig = None,
+                 allocation_method: str = "equal_weight",
+                 allocation_config: AllocationMethodConfig = None,
+                 position_management_config: PositionManagementConfig = None,
+                 enable_basic_exits: bool = False,
+                 basic_exits_config: BasicExitsConfig = None):
         """
         Initialize the portfolio backtester.
         
@@ -51,10 +58,20 @@ class PortfolioBacktester(Backtester):
             regime_filter_config: Configuration for regime filtering
             enable_vol_targeting: Whether to enable volatility targeting
             vol_targeting_config: Configuration for volatility targeting
+            allocation_method: Portfolio allocation method
+            allocation_config: Configuration for allocation methods
+            position_management_config: Configuration for position management
         """
-        super().__init__(initial_capital, commission, slippage, enable_mcpt, mcpt_config, enable_bootstrap, bootstrap_config, enable_regime_filter, regime_filter_config, enable_vol_targeting, vol_targeting_config)
+        super().__init__(initial_capital, commission, slippage, enable_mcpt, mcpt_config, enable_bootstrap, bootstrap_config, enable_regime_filter, regime_filter_config, enable_vol_targeting, vol_targeting_config, enable_basic_exits, basic_exits_config)
         self.max_positions = max_positions
         self.symbols = []
+        
+        # Initialize allocation and position management
+        self.allocation_method = allocation_method
+        self.allocation_config = allocation_config or AllocationMethodConfig(method=allocation_method)
+        self.position_management_config = position_management_config or PositionManagementConfig()
+        self.allocation_manager = AllocationMethods(self.allocation_config)
+        self.position_manager = PositionManager(self.position_management_config)
     
     def run_portfolio_backtest(self, 
                               data_dict: Dict[str, pd.DataFrame], 
@@ -177,25 +194,107 @@ class PortfolioBacktester(Backtester):
         
         date_signals = signals_df.loc[date]
         
-        # Process each symbol's signal
-        for symbol in self.symbols:
-            if symbol not in date_signals:
-                continue
-            
-            signal = date_signals[symbol]
-            price_col = f'{symbol}_close'
-            
-            if price_col not in row or pd.isna(row[price_col]):
-                continue
-            
-            price = row[price_col]
-            
-            if signal == 1:  # Long signal
-                self._open_position(symbol, price)
-            elif signal == -1:  # Short signal
-                self._close_position(symbol, price)
+        # Get current portfolio weights
+        current_weights = self._get_current_weights()
+        
+        # Calculate target weights based on signals and allocation method
+        target_weights = self._calculate_target_weights(date, date_signals, row)
+        
+        # Apply position management (caps and rebalancing)
+        final_weights, was_rebalanced = self.position_manager.rebalance_portfolio(
+            date, current_weights, target_weights
+        )
+        
+        # Update positions based on final weights
+        if was_rebalanced:
+            self._rebalance_positions(date, final_weights, row)
+        else:
+            # Process individual signals for new positions
+            for symbol in self.symbols:
+                if symbol not in date_signals:
+                    continue
+                
+                signal = date_signals[symbol]
+                price_col = f'{symbol}_close'
+                
+                if price_col not in row or pd.isna(row[price_col]):
+                    continue
+                
+                price = row[price_col]
+                
+                if signal == 1 and symbol not in self.positions:  # New long signal
+                    self._open_position(symbol, price, final_weights.get(symbol, 0))
+                elif signal == -1 and symbol in self.positions:  # Close signal
+                    self._close_position(symbol, price)
     
-    def _open_position(self, symbol: str, price: float):
+    def _get_current_weights(self) -> Dict[str, float]:
+        """Get current portfolio weights."""
+        if not self.positions:
+            return {}
+        
+        total_value = self.capital
+        weights = {}
+        
+        for symbol, position in self.positions.items():
+            position_value = position['shares'] * position['entry_price']
+            weights[symbol] = position_value / total_value if total_value > 0 else 0
+        
+        return weights
+    
+    def _calculate_target_weights(self, date, signals, row) -> Dict[str, float]:
+        """Calculate target weights based on signals and allocation method."""
+        # Get symbols with buy signals
+        buy_symbols = [symbol for symbol in self.symbols 
+                      if symbol in signals and signals[symbol] == 1]
+        
+        if not buy_symbols:
+            return {}
+        
+        # Calculate returns data for volatility weighting if needed
+        returns_data = None
+        if self.allocation_config.method == "volatility_weighted":
+            returns_data = self._get_returns_data(buy_symbols, date)
+        
+        # Calculate weights using allocation method
+        target_weights = self.allocation_manager.calculate_weights(
+            buy_symbols, returns_data
+        )
+        
+        # Log weights for this date
+        self.allocation_manager.log_weights(date, target_weights)
+        
+        return target_weights
+    
+    def _get_returns_data(self, symbols: List[str], current_date) -> Dict[str, pd.Series]:
+        """Get returns data for volatility weighting."""
+        returns_data = {}
+        
+        for symbol in symbols:
+            price_col = f'{symbol}_close'
+            if price_col in self.portfolio_data.columns:
+                prices = self.portfolio_data[price_col].dropna()
+                if len(prices) > 1:
+                    returns = prices.pct_change().dropna()
+                    returns_data[symbol] = returns
+        
+        return returns_data
+    
+    def _rebalance_positions(self, date, target_weights: Dict[str, float], row):
+        """Rebalance portfolio to target weights."""
+        # Close all existing positions
+        for symbol in list(self.positions.keys()):
+            price_col = f'{symbol}_close'
+            if price_col in row and not pd.isna(row[price_col]):
+                self._close_position(symbol, row[price_col])
+        
+        # Open new positions based on target weights
+        for symbol, weight in target_weights.items():
+            if weight > 0:
+                price_col = f'{symbol}_close'
+                if price_col in row and not pd.isna(row[price_col]):
+                    self._open_position(symbol, row[price_col], weight)
+    
+    def _open_position(self, symbol: str, price: float, target_weight: float = None):
         """Open a new position with portfolio constraints."""
         # Check if we already have a position
         if symbol in self.positions:
@@ -208,16 +307,13 @@ class PortfolioBacktester(Backtester):
         # Apply slippage
         entry_price = price * (1 + self.slippage)
         
-        # Calculate position size (equal weight across all positions)
-        available_capital = self.capital
-        if len(self.positions) > 0:
-            # Reserve capital for existing positions
-            reserved_capital = sum(pos['shares'] * pos['entry_price'] for pos in self.positions.values())
-            available_capital = self.capital - reserved_capital
+        # Calculate position size based on target weight
+        if target_weight is None:
+            # Fallback to equal weight if no target weight provided
+            target_weight = 1.0 / self.max_positions
         
-        # Equal weight allocation
-        target_weight = 1.0 / self.max_positions
-        position_value = self.initial_capital * target_weight
+        # Calculate position value based on target weight
+        position_value = self.capital * target_weight
         
         # Don't exceed available capital
         position_value = min(position_value, available_capital)

@@ -12,6 +12,9 @@ from neural_quant.core.backtest import Backtester
 from neural_quant.core.portfolio_backtest import PortfolioBacktester
 from neural_quant.utils.llm_assistant import NeuralQuantAssistant
 from neural_quant.analysis.walkforward import WalkForwardAnalyzer, WalkForwardConfig
+from neural_quant.analysis.allocation_methods import AllocationMethodConfig
+from neural_quant.analysis.position_management import PositionManagementConfig
+from neural_quant.analysis.basic_exits import BasicExitsConfig
 
 # Page config
 st.set_page_config(
@@ -523,6 +526,59 @@ with st.sidebar:
                                       help="Maximum scaling factor")
     
     st.markdown("---")
+    st.subheader("Portfolio Allocation")
+    
+    # Allocation method control
+    allocation_method = st.selectbox("Allocation Method",
+                                   ["Equal Weight", "Volatility Weighted"],
+                                   help="Method for allocating portfolio weights")
+    
+    if allocation_method == "Volatility Weighted":
+        vol_lookback = st.number_input("Volatility Lookback (days)", 
+                                     min_value=5, max_value=100, value=20, step=1,
+                                     help="Window for volatility calculation")
+    
+    st.markdown("---")
+    st.subheader("Position Management")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        max_position_pct = st.number_input("Max Position per Name (%)", 
+                                         min_value=1.0, max_value=50.0, value=15.0, step=1.0,
+                                         help="Maximum position size per individual asset") / 100.0
+    
+    with col2:
+        rebalance_frequency = st.selectbox("Rebalance Frequency",
+                                         ["Daily", "Weekly", "Monthly"],
+                                         index=2,  # Default to Monthly
+                                         help="How often to rebalance the portfolio")
+    
+    st.markdown("---")
+    st.subheader("Basic Exits")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        enable_atr_stop = st.checkbox("Enable ATR Stop", 
+                                    help="Exit positions when price crosses trailing ATR stop")
+        if enable_atr_stop:
+            atr_window = st.number_input("ATR Window", 
+                                       min_value=5, max_value=50, value=14, step=1,
+                                       help="Window for ATR calculation")
+            atr_multiplier = st.number_input("ATR Multiplier", 
+                                           min_value=1.0, max_value=5.0, value=2.5, step=0.1,
+                                           help="ATR stop distance multiplier")
+    
+    with col2:
+        enable_time_stop = st.checkbox("Enable Time Stop", 
+                                     help="Exit positions after specified number of bars")
+        if enable_time_stop:
+            time_stop_bars = st.number_input("Time Stop (bars)", 
+                                           min_value=5, max_value=100, value=30, step=1,
+                                           help="Number of bars to hold position")
+    
+    st.markdown("---")
     run_btn = st.button("Run Backtest", width='stretch')
     
     # AI Assistant Section
@@ -664,6 +720,31 @@ with tab1:
                 # Run appropriate backtest based on strategy type
                 if is_portfolio_strategy:
                     # Portfolio backtest
+                    # Create allocation method config
+                    allocation_method_lower = allocation_method.lower().replace(" ", "_")
+                    allocation_config = AllocationMethodConfig(
+                        method=allocation_method_lower,
+                        vol_lookback=vol_lookback if allocation_method == "Volatility Weighted" else 20
+                    )
+                    
+                    # Create position management config
+                    rebalance_freq_lower = rebalance_frequency.lower()
+                    position_config = PositionManagementConfig(
+                        max_position_pct=max_position_pct,
+                        rebalance_frequency=rebalance_freq_lower,
+                        min_rebalance_interval=1,
+                        turnover_threshold=0.05
+                    )
+                    
+                    # Create basic exits config
+                    basic_exits_config = BasicExitsConfig(
+                        enable_atr_stop=enable_atr_stop,
+                        atr_window=atr_window if enable_atr_stop else 14,
+                        atr_multiplier=atr_multiplier if enable_atr_stop else 2.5,
+                        enable_time_stop=enable_time_stop,
+                        time_stop_bars=time_stop_bars if enable_time_stop else 30
+                    )
+                    
                     bt = PortfolioBacktester(
                         commission=fee_bps/10000, 
                         slippage=slip_bps/10000,
@@ -675,7 +756,12 @@ with tab1:
                         enable_regime_filter=enable_regime_filter,
                         regime_filter_config=regime_filter_config,
                         enable_vol_targeting=enable_vol_targeting,
-                        vol_targeting_config=vol_targeting_config
+                        vol_targeting_config=vol_targeting_config,
+                        allocation_method=allocation_method_lower,
+                        allocation_config=allocation_config,
+                        position_management_config=position_config,
+                        enable_basic_exits=enable_atr_stop or enable_time_stop,
+                        basic_exits_config=basic_exits_config
                     )
                     results = bt.run_portfolio_backtest(data_dict, strat, str(start), str(end))
                 else:

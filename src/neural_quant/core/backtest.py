@@ -11,6 +11,7 @@ from ..analysis.mcpt import MonteCarloPermutationTester, MCPTConfig
 from ..analysis.bootstrap import BootstrapAnalyzer, BootstrapConfig
 from ..analysis.regime_filter import RegimeFilter, RegimeFilterConfig
 from ..analysis.volatility_targeting import VolatilityTargeting, VolatilityTargetingConfig
+from ..analysis.basic_exits import BasicExits, BasicExitsConfig
 
 class Backtester:
     """High-fidelity backtesting engine with realistic transaction costs."""
@@ -26,7 +27,9 @@ class Backtester:
                  enable_regime_filter: bool = False,
                  regime_filter_config: RegimeFilterConfig = None,
                  enable_vol_targeting: bool = False,
-                 vol_targeting_config: VolatilityTargetingConfig = None):
+                 vol_targeting_config: VolatilityTargetingConfig = None,
+                 enable_basic_exits: bool = False,
+                 basic_exits_config: BasicExitsConfig = None):
         """
         Initialize the backtester.
         
@@ -54,8 +57,11 @@ class Backtester:
         self.regime_filter_config = regime_filter_config or RegimeFilterConfig()
         self.enable_vol_targeting = enable_vol_targeting
         self.vol_targeting_config = vol_targeting_config or VolatilityTargetingConfig()
+        self.enable_basic_exits = enable_basic_exits
+        self.basic_exits_config = basic_exits_config or BasicExitsConfig()
         self.regime_filter = None
         self.vol_targeting = None
+        self.basic_exits = None
         self.reset()
     
     def reset(self):
@@ -111,6 +117,10 @@ class Backtester:
         if self.enable_vol_targeting:
             self.vol_targeting = VolatilityTargeting(self.vol_targeting_config)
         
+        # Initialize basic exits if enabled
+        if self.enable_basic_exits:
+            self.basic_exits = BasicExits(self.basic_exits_config)
+        
         # Generate signals
         signals = strategy.generate_signals(data)
         
@@ -158,6 +168,10 @@ class Backtester:
         if self.regime_filter and not self.regime_filter.should_trade(date):
             return  # Skip trading if regime filter blocks it
         
+        # Check basic exits for existing positions first
+        if self.basic_exits:
+            self._check_basic_exits(date, row)
+        
         # Find signals for this date
         date_signals = [s for s in signals if s.timestamp.date() == date.date()]
         
@@ -169,6 +183,36 @@ class Backtester:
                 self._open_position(symbol, signal.price)
             elif action == 'SELL' and symbol in self.positions:
                 self._close_position(symbol, signal.price)
+    
+    def _check_basic_exits(self, date, row):
+        """Check basic exit conditions for all positions."""
+        if not self.basic_exits:
+            return
+        
+        positions_to_close = []
+        
+        for symbol in list(self.positions.keys()):
+            # Get current price
+            price_col = f'{symbol}_close'
+            if price_col not in row or pd.isna(row[price_col]):
+                continue
+            
+            current_price = row[price_col]
+            
+            # Check exit conditions
+            should_exit, exit_reason = self.basic_exits.check_exits(
+                symbol, current_price, date
+            )
+            
+            if should_exit:
+                positions_to_close.append((symbol, current_price, exit_reason))
+            else:
+                # Update stops for continuing positions
+                self.basic_exits.update_stops(symbol, current_price, date)
+        
+        # Close positions that hit stops
+        for symbol, price, reason in positions_to_close:
+            self._close_position(symbol, price, exit_reason=reason)
     
     def _open_position(self, symbol: str, price: float):
         """Open a new position."""
@@ -188,8 +232,12 @@ class Backtester:
                     'entry_date': self.current_date
                 }
                 self.capital -= cost
+                
+                # Initialize basic exits for new position
+                if self.basic_exits:
+                    self.basic_exits.initialize_stops(symbol, self.current_date, entry_price)
     
-    def _close_position(self, symbol: str, price: float):
+    def _close_position(self, symbol: str, price: float, exit_reason: str = "SIGNAL"):
         """Close an existing position."""
         if symbol not in self.positions:
             return
@@ -210,12 +258,17 @@ class Backtester:
             'entry_price': position['entry_price'],
             'exit_price': exit_price,
             'pnl': pnl,
-            'return': pnl / (position['shares'] * position['entry_price'])
+            'return': pnl / (position['shares'] * position['entry_price']),
+            'exit_reason': exit_reason
         }
         self.trades.append(trade)
         
         # Update capital
         self.capital += proceeds
+        
+        # Clean up basic exits tracking
+        if self.basic_exits:
+            self.basic_exits.close_position(symbol)
         
         # Remove position
         del self.positions[symbol]
@@ -393,6 +446,17 @@ class Backtester:
                         'vol_scale_cap': vol_summary['scale_cap']
                     })
                 
+                # Add basic exits parameters if enabled
+                if self.enable_basic_exits and self.basic_exits:
+                    params.update({
+                        'basic_exits_enabled': True,
+                        'atr_stop_enabled': self.basic_exits.config.enable_atr_stop,
+                        'atr_window': self.basic_exits.config.atr_window,
+                        'atr_multiplier': self.basic_exits.config.atr_multiplier,
+                        'time_stop_enabled': self.basic_exits.config.enable_time_stop,
+                        'time_stop_bars': self.basic_exits.config.time_stop_bars
+                    })
+                
                 mlflow.log_params(params)
                 
                 # Log metrics
@@ -423,6 +487,17 @@ class Backtester:
                         'realized_vol_post': vol_summary['realized_vol_post'],
                         'avg_scaling': vol_summary['avg_scaling'],
                         'vol_reduction': vol_summary['vol_reduction']
+                    })
+                
+                # Add basic exits metrics if enabled
+                if self.enable_basic_exits and self.basic_exits:
+                    exits_summary = self.basic_exits.get_exits_summary()
+                    metrics.update({
+                        'total_stops': exits_summary['total_stops'],
+                        'atr_stops': exits_summary['atr_stops'],
+                        'time_stops': exits_summary['time_stops'],
+                        'atr_stop_rate': exits_summary['atr_stop_rate'],
+                        'time_stop_rate': exits_summary['time_stop_rate']
                     })
                 
                 mlflow.log_metrics(metrics)
