@@ -7,6 +7,8 @@ import mlflow
 import mlflow.sklearn
 from datetime import datetime
 from ..utils.time_utils import ensure_tz_naive_daily_index, is_daily_data
+from ..analysis.mcpt import MonteCarloPermutationTester, MCPTConfig
+from ..analysis.bootstrap import BootstrapAnalyzer, BootstrapConfig
 
 class Backtester:
     """High-fidelity backtesting engine with realistic transaction costs."""
@@ -14,7 +16,11 @@ class Backtester:
     def __init__(self, 
                  initial_capital: float = 100000.0,
                  commission: float = 0.001,
-                 slippage: float = 0.0005):
+                 slippage: float = 0.0005,
+                 enable_mcpt: bool = True,
+                 mcpt_config: MCPTConfig = None,
+                 enable_bootstrap: bool = True,
+                 bootstrap_config: BootstrapConfig = None):
         """
         Initialize the backtester.
         
@@ -22,10 +28,18 @@ class Backtester:
             initial_capital: Starting capital
             commission: Commission rate per trade
             slippage: Slippage rate per trade
+            enable_mcpt: Whether to run Monte Carlo Permutation Tests
+            mcpt_config: Configuration for MCPT testing
+            enable_bootstrap: Whether to run Bootstrap Confidence Intervals
+            bootstrap_config: Configuration for Bootstrap analysis
         """
         self.initial_capital = initial_capital
         self.commission = commission
         self.slippage = slippage
+        self.enable_mcpt = enable_mcpt
+        self.mcpt_config = mcpt_config or MCPTConfig()
+        self.enable_bootstrap = enable_bootstrap
+        self.bootstrap_config = bootstrap_config or BootstrapConfig()
         self.reset()
     
     def reset(self):
@@ -77,6 +91,16 @@ class Backtester:
         
         # Calculate performance metrics
         results = self._calculate_results(data)
+        
+        # Run MCPT significance testing if enabled
+        if self.enable_mcpt and 'equity_curve' in results:
+            mcpt_results = self._run_mcpt_test(results, strategy)
+            results['mcpt_results'] = mcpt_results
+        
+        # Run Bootstrap confidence intervals if enabled
+        if self.enable_bootstrap and 'trades' in results and results['trades']:
+            bootstrap_results = self._run_bootstrap_test(results, strategy)
+            results['bootstrap_results'] = bootstrap_results
         
         # Log to MLflow
         self._log_to_mlflow(results, strategy)
@@ -193,13 +217,98 @@ class Backtester:
             'trades': self.trades
         }
     
+    def _run_mcpt_test(self, results: Dict[str, Any], strategy) -> Dict[str, Any]:
+        """Run Monte Carlo Permutation Test on backtest results."""
+        try:
+            equity_df = results['equity_curve']
+            returns = equity_df['returns'].dropna()
+            
+            # Create MCPT tester
+            tester = MonteCarloPermutationTester(self.mcpt_config)
+            
+            # Test returns significance
+            mcpt_results = tester.test_returns_significance(
+                returns, 
+                strategy_name=strategy.__class__.__name__
+            )
+            
+            # Get summary
+            summary = tester.get_summary()
+            
+            # Log to MLflow
+            tester.log_to_mlflow()
+            
+            return {
+                'results': mcpt_results,
+                'summary': summary,
+                'config': {
+                    'n_permutations': self.mcpt_config.n_permutations,
+                    'block_size': self.mcpt_config.block_size,
+                    'confidence_level': self.mcpt_config.confidence_level,
+                    'significance_level': self.mcpt_config.significance_level
+                }
+            }
+            
+        except Exception as e:
+            print(f"Warning: MCPT testing failed: {e}")
+            return {'error': str(e)}
+    
+    def _run_bootstrap_test(self, results: Dict[str, Any], strategy) -> Dict[str, Any]:
+        """Run Bootstrap Confidence Intervals on backtest results."""
+        try:
+            trades = results.get('trades', [])
+            
+            if not trades:
+                return {'error': 'No trades available for bootstrap analysis'}
+            
+            # Create Bootstrap analyzer
+            analyzer = BootstrapAnalyzer(self.bootstrap_config)
+            
+            # Analyze trades
+            bootstrap_results = analyzer.analyze_trades(
+                trades, 
+                self.initial_capital,
+                strategy_name=strategy.__class__.__name__
+            )
+            
+            # Get summary
+            summary = analyzer.get_summary()
+            
+            # Create histograms
+            plots = analyzer.create_histogram_plots()
+            
+            # Log to MLflow
+            analyzer.log_to_mlflow()
+            
+            return {
+                'results': bootstrap_results,
+                'summary': summary,
+                'plots': plots,
+                'config': {
+                    'n_bootstrap': self.bootstrap_config.n_bootstrap,
+                    'confidence_level': self.bootstrap_config.confidence_level,
+                    'resample_method': self.bootstrap_config.resample_method
+                }
+            }
+            
+        except Exception as e:
+            print(f"Warning: Bootstrap testing failed: {e}")
+            return {'error': str(e)}
+    
     def _log_to_mlflow(self, results: Dict[str, Any], strategy):
         """Log backtest results to MLflow."""
         try:
-            # Set tracking URI if not already set
             import mlflow
+            
+            # Set tracking URI if not already set
             if not mlflow.get_tracking_uri():
                 mlflow.set_tracking_uri("sqlite:///mlflow.db")
+            
+            # End any existing run before starting a new one
+            try:
+                mlflow.end_run()
+            except:
+                pass  # No active run to end
             
             with mlflow.start_run() as run:
                 # Log parameters

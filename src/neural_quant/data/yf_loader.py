@@ -9,21 +9,38 @@ from ..utils.time_utils import ensure_tz_naive_daily_index, clamp_to_dates, is_d
 logger = logging.getLogger(__name__)
 
 def load_yf_data(symbols: List[str], 
-                start_date: str, 
-                end_date: str,
-                timeframe: str = '1d') -> pd.DataFrame:
+                start_date: Optional[str] = None, 
+                end_date: Optional[str] = None,
+                timeframe: str = '1d',
+                days_back: Optional[int] = None) -> pd.DataFrame:
     """
     Load data from Yahoo Finance for multiple symbols.
     
     Args:
         symbols: List of symbols to load
-        start_date: Start date in YYYY-MM-DD format
-        end_date: End date in YYYY-MM-DD format
+        start_date: Start date in YYYY-MM-DD format (optional if days_back provided)
+        end_date: End date in YYYY-MM-DD format (optional if days_back provided)
         timeframe: Data timeframe (1d, 1h, etc.)
+        days_back: Number of days back from today (alternative to start_date/end_date)
         
     Returns:
         DataFrame with OHLCV data for all symbols
     """
+    # Handle days_back parameter
+    if days_back is not None:
+        from datetime import datetime, timedelta
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        
+        if days_back == "ytd":
+            # Year to date
+            start_date = datetime.now().replace(month=1, day=1).strftime('%Y-%m-%d')
+        else:
+            # Regular days back
+            start_date = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
+    
+    if not start_date or not end_date:
+        raise ValueError("Either start_date/end_date or days_back must be provided")
+    
     logger.info(f"Loading data for {symbols} from {start_date} to {end_date}")
     
     all_data = []

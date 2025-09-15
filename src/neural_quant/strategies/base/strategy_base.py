@@ -575,6 +575,37 @@ class StrategyBase(ABC):
         """
         pass
     
+    def is_portfolio_strategy(self) -> bool:
+        """
+        Check if this strategy requires portfolio-level data.
+        
+        Returns:
+            bool: True if strategy requires multiple tickers, False otherwise.
+        """
+        return False
+    
+    def generate_portfolio_signals(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Generate portfolio-level signals for multiple tickers.
+        
+        This method should be implemented by portfolio strategies.
+        Default implementation raises NotImplementedError.
+        
+        Args:
+            data: DataFrame with price data for multiple tickers (columns = tickers)
+            
+        Returns:
+            DataFrame of signals: +1 (long), -1 (short), 0 (flat) for each ticker
+        """
+        if not self.is_portfolio_strategy():
+            raise NotImplementedError(
+                f"Strategy {self.name} is not a portfolio strategy. "
+                "Use generate_signals() for single-ticker strategies."
+            )
+        raise NotImplementedError(
+            f"Portfolio strategy {self.name} must implement generate_portfolio_signals()"
+        )
+    
     def get_strategy_info(self) -> Dict[str, Any]:
         """
         Get information about the strategy.
@@ -586,6 +617,7 @@ class StrategyBase(ABC):
             'name': self.name,
             'parameters': self.parameters,
             'is_initialized': self.is_initialized,
+            'is_portfolio_strategy': self.is_portfolio_strategy(),
             'current_positions': self.current_positions,
             'cash': self.cash,
             'total_value': self.total_value,
