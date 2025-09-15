@@ -140,7 +140,7 @@ python scripts/run_strategy.py
                     │ • Circuit Breaks│
                     │ • Portfolio Risk│
                     └─────────────────┘
-```
+   ```
 
 ## Project Structure
 
