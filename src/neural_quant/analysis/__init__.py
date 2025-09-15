@@ -71,6 +71,10 @@ from ..logging.artifacts import (
     SummaryArtifact
 )
 
+from .summary_generator import SummaryGenerator, PromotionRules
+from .run_qa import RunQASystem
+from .weekly_memo import WeeklyMemoGenerator
+
 __all__ = [
     'MonteCarloPermutationTester',
     'MCPTConfig', 
@@ -109,5 +113,9 @@ __all__ = [
     'BootstrapArtifact',
     'WalkForwardArtifact',
     'WeightsArtifact',
-    'SummaryArtifact'
+    'SummaryArtifact',
+    'SummaryGenerator',
+    'PromotionRules',
+    'RunQASystem',
+    'WeeklyMemoGenerator'
 ]

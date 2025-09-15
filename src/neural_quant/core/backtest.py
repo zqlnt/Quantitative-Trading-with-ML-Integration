@@ -13,6 +13,7 @@ from ..analysis.regime_filter import RegimeFilter, RegimeFilterConfig
 from ..analysis.volatility_targeting import VolatilityTargeting, VolatilityTargetingConfig
 from ..analysis.basic_exits import BasicExits, BasicExitsConfig
 from ..logging.artifacts import ArtifactManager
+from ..analysis.summary_generator import SummaryGenerator
 
 class Backtester:
     """High-fidelity backtesting engine with realistic transaction costs."""
@@ -622,6 +623,41 @@ class Backtester:
             
             # Save all artifacts
             saved_files = artifact_manager.save_all_artifacts()
+            
+            # Generate and save summary
+            summary_generator = SummaryGenerator()
+            summary = summary_generator.generate_summary(
+                run_id=run_id,
+                artifacts={
+                    'metrics': portfolio_metrics,
+                    'params': {
+                        'strategy': strategy.__class__.__name__,
+                        'tickers': tickers,
+                        'start_date': start_date or "unknown",
+                        'end_date': end_date or "unknown"
+                    },
+                    'trades': results.get('trades', []),
+                    'mcpt_results': results.get('mcpt_results'),
+                    'bootstrap_results': results.get('bootstrap_results')
+                },
+                mcpt_results=results.get('mcpt_results'),
+                bootstrap_results=results.get('bootstrap_results')
+            )
+            
+            # Save summary as markdown
+            summary_filepath = os.path.join(artifact_manager.output_dir, "summary.md")
+            summary_generator.save_summary_markdown(summary, summary_filepath)
+            
+            # Log summary to MLflow
+            if mlflow.active_run():
+                try:
+                    mlflow.log_artifact(summary_filepath)
+                    # Update run description with summary
+                    mlflow.set_tag("summary_generated", "true")
+                    mlflow.set_tag("promotion_decision", "PROMOTE" if summary['promotion_decision']['promote'] else "REJECT")
+                    mlflow.set_tag("significance_verdict", summary['significance_verdict'])
+                except Exception as e:
+                    print(f"Warning: Failed to log summary: {e}")
             
             # Log artifacts to MLflow
             if mlflow.active_run():

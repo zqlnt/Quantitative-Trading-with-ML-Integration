@@ -935,6 +935,62 @@ with tab1:
                         threshold_bad=-0.1
                     ), unsafe_allow_html=True)
                 
+                # Ask About This Run Button
+                st.markdown("---")
+                col1, col2, col3 = st.columns([1, 2, 1])
+                with col2:
+                    if st.button("🤖 Ask About This Run", help="Ask questions about this backtest run with AI assistance", use_container_width=True):
+                        st.session_state['show_qa'] = True
+                        st.session_state['qa_results'] = results
+                        st.session_state['qa_strategy'] = strategy_name
+                        st.session_state['qa_tickers'] = selected_tickers
+                
+                # Q&A Section
+                if st.session_state.get('show_qa', False) and st.session_state.get('qa_results') == results:
+                    st.markdown("### 🤖 AI Assistant - Ask About This Run")
+                    
+                    # Load Q&A system
+                    from neural_quant.analysis.run_qa import RunQASystem
+                    qa_system = RunQASystem()
+                    
+                    # Create context
+                    context = qa_system.load_run_context(
+                        run_id="current_run",
+                        artifacts={
+                            'params': {
+                                'strategy': st.session_state.get('qa_strategy', 'Unknown'),
+                                'tickers': st.session_state.get('qa_tickers', []),
+                                'start_date': str(start),
+                                'end_date': str(end)
+                            },
+                            'metrics': results.get('metrics', {}),
+                            'trades': results.get('trades', []),
+                            'mcpt_results': results.get('mcpt_results', {}),
+                            'bootstrap_results': results.get('bootstrap_results', {})
+                        }
+                    )
+                    
+                    # Common questions
+                    st.markdown("**Common Questions:**")
+                    common_questions = qa_system.get_common_questions()
+                    cols = st.columns(3)
+                    for i, question in enumerate(common_questions[:6]):  # Show first 6 questions
+                        with cols[i % 3]:
+                            if st.button(question, key=f"common_q_{i}"):
+                                st.session_state['qa_question'] = question
+                    
+                    # Custom question input
+                    question = st.text_input("Ask a custom question:", value=st.session_state.get('qa_question', ''))
+                    
+                    if st.button("Ask Question") and question:
+                        with st.spinner("Analyzing your question..."):
+                            answer = qa_system.answer_question(question, context)
+                            st.markdown(f"**Answer:** {answer}")
+                    
+                    if st.button("Close Q&A"):
+                        st.session_state['show_qa'] = False
+                        st.rerun()
+                
                 # MCPT Significance Testing Results
                 if 'mcpt_results' in results and 'summary' in results['mcpt_results']:
                     st.subheader("Statistical Significance Analysis")
