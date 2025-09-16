@@ -1079,6 +1079,84 @@ with tab1:
                         json_output = researcher.format_as_json(experiments)
                         st.code(json_output, language='json')
                     
+                    # Strategy Developer Button
+                    if experiments.get('experiments'):
+                        col1, col2, col3 = st.columns([1, 2, 1])
+                        with col2:
+                            if st.button("🔧 Generate Changes", help="Translate experiments into precise change requests", use_container_width=True):
+                                st.session_state['show_developer'] = True
+                                st.session_state['developer_experiments'] = experiments['experiments']
+                    
+                    # Strategy Developer Section
+                    if st.session_state.get('show_developer', False) and st.session_state.get('developer_experiments'):
+                        st.markdown("### 🔧 Strategy Developer - Generate Changes")
+                        
+                        # Load Strategy Developer
+                        from neural_quant.analysis.strategy_developer import StrategyDeveloper
+                        developer = StrategyDeveloper()
+                        
+                        # Let user select experiments
+                        st.subheader("Select Experiments to Implement")
+                        selected_experiments = []
+                        
+                        for i, experiment in enumerate(st.session_state.get('developer_experiments', [])):
+                            if st.checkbox(f"**{experiment['id']}**: {experiment['strategy']} - {experiment.get('rationale', 'No rationale')[:100]}...", 
+                                         key=f"exp_select_{i}"):
+                                selected_experiments.append(experiment)
+                        
+                        if selected_experiments and st.button("Generate Change Requests"):
+                            with st.spinner("Translating experiments into change requests..."):
+                                changes = developer.translate_experiments(
+                                    selected_experiments=selected_experiments,
+                                    max_grid_size=9
+                                )
+                            
+                            # Display changes
+                            if changes.get('changes'):
+                                st.subheader("Proposed Changes")
+                                for i, change in enumerate(changes['changes']):
+                                    with st.expander(f"**Change {i+1}**: {change['type'].replace('_', ' ').title()}"):
+                                        if change['type'] == 'param_grid':
+                                            st.write(f"**Strategy:** {change['strategy']}")
+                                            st.write("**Parameter Grid:**")
+                                            for param, values in change['grid'].items():
+                                                st.write(f"- {param}: {values}")
+                                        
+                                        elif change['type'] in ['overlay_update', 'overlay_add']:
+                                            st.write(f"**Overlay:** {change['name']}")
+                                            st.write("**Settings:**")
+                                            for setting, value in change['settings'].items():
+                                                st.write(f"- {setting}: {value}")
+                                        
+                                        elif change['type'] == 'code_change':
+                                            st.write(f"**File:** {change['file']}")
+                                            st.write(f"**Function:** {change['function']}")
+                                            st.write(f"**Description:** {change['description']}")
+                            
+                            # Display sweeps
+                            if changes.get('sweeps'):
+                                st.subheader("Parameter Sweeps")
+                                for i, sweep in enumerate(changes['sweeps']):
+                                    with st.expander(f"**Sweep {i+1}**: {sweep['strategy']} (Max {sweep['max_grid']} combinations)"):
+                                        st.write("**Parameters:**")
+                                        for param, values in sweep['params'].items():
+                                            st.write(f"- {param}: {values}")
+                            
+                            # Display tests
+                            if changes.get('tests'):
+                                st.subheader("Recommended Tests")
+                                for test in changes['tests']:
+                                    st.write(f"- {test}")
+                            
+                            # Show raw JSON
+                            with st.expander("Raw JSON Output"):
+                                json_output = developer.format_as_json(changes)
+                                st.code(json_output, language='json')
+                        
+                        if st.button("Close Developer"):
+                            st.session_state['show_developer'] = False
+                            st.rerun()
+                    
                     if st.button("Close Researcher"):
                         st.session_state['show_researcher'] = False
                         st.rerun()
