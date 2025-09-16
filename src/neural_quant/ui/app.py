@@ -982,6 +982,101 @@ with tab1:
                         with st.expander("🚀 Actionable Next Experiments"):
                             for exp in summary['actionable_experiments']:
                                 st.write(f"- {exp}")
+                    
+                    # Iterate from this run button (only for rejected runs)
+                    if not promote:
+                        st.markdown("---")
+                        col1, col2, col3 = st.columns([1, 2, 1])
+                        with col2:
+                            if st.button("🔄 Iterate from this run", 
+                                       help="Generate new experiments and execute them based on this failed run", 
+                                       use_container_width=True):
+                                st.session_state['show_iteration'] = True
+                                st.session_state['iteration_results'] = results
+                                st.session_state['iteration_strategy'] = strategy_name
+                                st.session_state['iteration_tickers'] = selected_tickers
+                
+                # Iteration Section
+                if st.session_state.get('show_iteration', False) and st.session_state.get('iteration_results') == results:
+                    st.markdown("### 🔄 Strategy Iteration - R1 → R2 → Execution → R3")
+                    
+                    # Load Orchestration Engine
+                    from neural_quant.analysis.orchestration import OrchestrationEngine
+                    orchestrator = OrchestrationEngine()
+                    
+                    # Get current run ID (simplified - would need to extract from MLflow)
+                    current_run_id = "current_run"  # This would be the actual MLflow run ID
+                    
+                    if st.button("Start Iteration Loop"):
+                        with st.spinner("Running R1 → R2 → Execution → R3 loop..."):
+                            try:
+                                # Run the orchestration loop
+                                iteration_result = orchestrator.iterate_from_run(
+                                    parent_run_id=current_run_id,
+                                    selected_experiments=None,  # Auto-select
+                                    max_iterations=3
+                                )
+                                
+                                if iteration_result.get('success'):
+                                    st.success("Iteration loop completed successfully!")
+                                    
+                                    # Display R1 Plan
+                                    if iteration_result.get('r1_plan_path'):
+                                        st.subheader("📋 R1 Plan Generated")
+                                        st.info(f"R1 plan saved to: {iteration_result['r1_plan_path']}")
+                                    
+                                    # Display R2 Changes
+                                    if iteration_result.get('r2_changes_path'):
+                                        st.subheader("🔧 R2 Changes Generated")
+                                        st.info(f"R2 changes saved to: {iteration_result['r2_changes_path']}")
+                                    
+                                    # Display Iteration Results
+                                    if iteration_result.get('iteration_results'):
+                                        st.subheader("🚀 Experiment Execution Results")
+                                        for result in iteration_result['iteration_results']:
+                                            status_emoji = "✅" if result['status'] == 'completed' else "❌"
+                                            st.write(f"{status_emoji} {result['experiment_id']} - {result['status']}")
+                                    
+                                    # Display Evaluation Results
+                                    if iteration_result.get('evaluation_results'):
+                                        st.subheader("📊 R3 Evaluation Results")
+                                        for eval_result in iteration_result['evaluation_results']:
+                                            promote_status = "PROMOTE" if eval_result['promotion_decision'] else "REJECT"
+                                            st.write(f"Run {eval_result['run_id'][:8]}... - {promote_status} (Sharpe: {eval_result['sharpe_ratio']:.2f})")
+                                    
+                                    # Display Lineage
+                                    if iteration_result.get('lineage_path'):
+                                        st.subheader("🔗 Experiment Lineage")
+                                        st.info(f"Lineage graph saved to: {iteration_result['lineage_path']}")
+                                    
+                                    # Store results in session state
+                                    st.session_state['iteration_completed'] = True
+                                    st.session_state['iteration_data'] = iteration_result
+                                    
+                                else:
+                                    st.error(f"Iteration failed: {iteration_result.get('error', 'Unknown error')}")
+                                    
+                            except Exception as e:
+                                st.error(f"Error running iteration: {str(e)}")
+                    
+                    # Show iteration status if completed
+                    if st.session_state.get('iteration_completed', False):
+                        st.markdown("---")
+                        st.subheader("📈 Iteration Summary")
+                        
+                        iteration_data = st.session_state.get('iteration_data', {})
+                        if iteration_data:
+                            # Show iteration graph
+                            with st.expander("🔗 Iteration Graph"):
+                                st.json(iteration_data.get('iteration_graph', {}))
+                            
+                            # Show detailed results
+                            with st.expander("📊 Detailed Results"):
+                                st.json(iteration_data)
+                    
+                    if st.button("Close Iteration"):
+                        st.session_state['show_iteration'] = False
+                        st.rerun()
                 
                 # Ask About This Run Button
                 st.markdown("---")

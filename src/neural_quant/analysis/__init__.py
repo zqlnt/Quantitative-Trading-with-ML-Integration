@@ -76,6 +76,7 @@ from .run_qa import RunQASystem
 from .weekly_memo import WeeklyMemoGenerator
 from .quant_researcher import QuantResearcher
 from .strategy_developer import StrategyDeveloper
+from .orchestration import OrchestrationEngine
 
 __all__ = [
     'MonteCarloPermutationTester',
@@ -121,5 +122,6 @@ __all__ = [
     'RunQASystem',
     'WeeklyMemoGenerator',
     'QuantResearcher',
-    'StrategyDeveloper'
+    'StrategyDeveloper',
+    'OrchestrationEngine'
 ]
