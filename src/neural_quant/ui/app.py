@@ -935,6 +935,54 @@ with tab1:
                         threshold_bad=-0.1
                     ), unsafe_allow_html=True)
                 
+                # Strategy Analyst Evaluation
+                if 'summary' in results and results['summary']:
+                    st.markdown("---")
+                    st.subheader("📊 Strategy Analyst Evaluation")
+                    
+                    summary = results['summary']
+                    promote = summary.get('promotion_decision', {}).get('promote', False)
+                    status_color = "🟢" if promote else "🔴"
+                    status_text = "PROMOTE" if promote else "REJECT"
+                    
+                    col1, col2, col3 = st.columns([1, 2, 1])
+                    with col2:
+                        st.markdown(f"### {status_color} **{status_text}** - {summary.get('significance_verdict', 'UNKNOWN')}")
+                    
+                    # Executive Summary
+                    with st.expander("📋 Executive Summary", expanded=True):
+                        st.write(summary.get('executive_summary', 'No summary available'))
+                    
+                    # Promotion Criteria
+                    with st.expander("✅ Promotion Criteria Analysis"):
+                        criteria = summary.get('promotion_decision', {})
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            st.write("**Core Performance:**")
+                            st.write(f"- Sharpe ≥ 1.0: {'✅' if criteria.get('sharpe_pass', False) else '❌'}")
+                            st.write(f"- Sortino ≥ 1.2: {'✅' if criteria.get('sortino_pass', False) else '❌'}")
+                            st.write(f"- Max DD ≤ 12%: {'✅' if criteria.get('max_dd_pass', False) else '❌'}")
+                            st.write(f"- Profit Factor ≥ 1.2: {'✅' if criteria.get('profit_factor_pass', False) else '❌'}")
+                        
+                        with col2:
+                            st.write("**Statistical Significance:**")
+                            st.write(f"- MCPT p-value ≤ 0.05: {'✅' if criteria.get('mcpt_pass', False) else '❌'}")
+                            st.write(f"- Walk-forward ≥ 50%: {'✅' if criteria.get('wf_pass', False) else '❌'}")
+                            st.write(f"- Stress Test ≥ 0.7: {'✅' if criteria.get('stress_test_pass', False) else '❌'}")
+                    
+                    # Robustness Notes
+                    if summary.get('robustness_notes'):
+                        with st.expander("🔍 Robustness Notes"):
+                            for note in summary['robustness_notes']:
+                                st.write(f"- {note}")
+                    
+                    # Actionable Experiments
+                    if summary.get('actionable_experiments'):
+                        with st.expander("🚀 Actionable Next Experiments"):
+                            for exp in summary['actionable_experiments']:
+                                st.write(f"- {exp}")
+                
                 # Ask About This Run Button
                 st.markdown("---")
                 col1, col2, col3 = st.columns([1, 2, 1])

@@ -71,7 +71,7 @@ from ..logging.artifacts import (
     SummaryArtifact
 )
 
-from .summary_generator import SummaryGenerator, PromotionRules
+from .summary_generator import StrategyAnalyst, PromotionRules
 from .run_qa import RunQASystem
 from .weekly_memo import WeeklyMemoGenerator
 from .quant_researcher import QuantResearcher
@@ -116,7 +116,7 @@ __all__ = [
     'WalkForwardArtifact',
     'WeightsArtifact',
     'SummaryArtifact',
-    'SummaryGenerator',
+    'StrategyAnalyst',
     'PromotionRules',
     'RunQASystem',
     'WeeklyMemoGenerator',

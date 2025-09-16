@@ -13,7 +13,7 @@ from ..analysis.regime_filter import RegimeFilter, RegimeFilterConfig
 from ..analysis.volatility_targeting import VolatilityTargeting, VolatilityTargetingConfig
 from ..analysis.basic_exits import BasicExits, BasicExitsConfig
 from ..logging.artifacts import ArtifactManager
-from ..analysis.summary_generator import SummaryGenerator
+from ..analysis.summary_generator import StrategyAnalyst
 
 class Backtester:
     """High-fidelity backtesting engine with realistic transaction costs."""
@@ -624,9 +624,9 @@ class Backtester:
             # Save all artifacts
             saved_files = artifact_manager.save_all_artifacts()
             
-            # Generate and save summary
-            summary_generator = SummaryGenerator()
-            summary = summary_generator.generate_summary(
+            # Generate and save summary using Strategy Analyst
+            strategy_analyst = StrategyAnalyst()
+            summary = strategy_analyst.evaluate_run_bundle(
                 run_id=run_id,
                 artifacts={
                     'metrics': portfolio_metrics,
@@ -646,12 +646,15 @@ class Backtester:
             
             # Save summary as markdown
             summary_filepath = os.path.join(artifact_manager.output_dir, "summary.md")
-            summary_generator.save_summary_markdown(summary, summary_filepath)
+            strategy_analyst.save_summary_markdown(summary, summary_filepath)
             
-            # Log summary to MLflow
+            # Log summary to MLflow and set run description
             if mlflow.active_run():
                 try:
                     mlflow.log_artifact(summary_filepath)
+                    # Set run description from summary
+                    run_description = strategy_analyst.set_mlflow_run_description(summary)
+                    mlflow.set_tag("mlflow.note.content", run_description)
                     # Update run description with summary
                     mlflow.set_tag("summary_generated", "true")
                     mlflow.set_tag("promotion_decision", "PROMOTE" if summary['promotion_decision']['promote'] else "REJECT")
