@@ -179,7 +179,7 @@ class StrategyAnalyst:
         
         # Statistical significance criteria
         mcpt_pass = True
-        if mcpt_results and 'results' in mcpt_results:
+        if mcpt_results and isinstance(mcpt_results, dict) and 'results' in mcpt_results:
             sharpe_results = [r for r in mcpt_results['results'] if r.get('metric_name') == 'sharpe_ratio']
             if sharpe_results:
                 p_value = sharpe_results[0].get('p_value', 1.0)
@@ -189,7 +189,7 @@ class StrategyAnalyst:
         
         # Walk-forward significance
         wf_pass = True
-        if walkforward_results and 'rolling_p_values' in walkforward_results:
+        if walkforward_results and isinstance(walkforward_results, dict) and 'rolling_p_values' in walkforward_results:
             p_values = walkforward_results['rolling_p_values']
             significant_windows = sum(1 for p in p_values if p <= self.promotion_rules.MAX_MCPT_P_VALUE)
             total_windows = len(p_values)

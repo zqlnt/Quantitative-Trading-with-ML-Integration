@@ -359,8 +359,8 @@ def create_trade_heatmap(trades_df):
     return fig
 
 # Main title
-st.title("Neural-Quant")
-st.markdown("Advanced Algorithmic Trading Platform with AI Assistant")
+st.title("Neural Quant")
+st.markdown("Advanced Algorithmic Trading Platform")
 
 # Initialize session state
 if 'chat_history' not in st.session_state:
@@ -380,9 +380,9 @@ strategy_registry = get_strategy_registry()
 
 # Sidebar
 with st.sidebar:
-    st.header("Experiment Configuration")
+    st.header("Configuration")
     
-    st.subheader("Strategy Selection")
+    st.subheader("Strategy")
     strategy_name = st.selectbox(
         "Select Strategy",
         options=strategy_registry.list_strategies(),
@@ -394,11 +394,11 @@ with st.sidebar:
     strategy_info = strategy_registry.get_strategy_info(strategy_name)
     is_portfolio_strategy = strategy_info.get('is_portfolio_strategy', False)
     
-    st.subheader("Market Data")
+    st.subheader("Data")
     
     if is_portfolio_strategy:
         # Portfolio strategies - multiple tickers
-        st.write("**Portfolio Strategy - Select Multiple Tickers**")
+        st.caption("Portfolio Strategy - Select Multiple Tickers")
         available_tickers = [
             "AAPL", "TSLA", "NVDA", "PLTR", "GOOG", "LMT", "NOC", 
             "BTC-USD", "SOL-USD", "XAUUSD=X", "CL=F", "GBPUSD=X"
@@ -416,13 +416,14 @@ with st.sidebar:
             selected_tickers = ["AAPL"]  # Default fallback
     else:
         # Single ticker strategies
+        st.caption("Single Ticker Strategy")
         ticker = st.text_input("Ticker Symbol", "AAPL")
         selected_tickers = [ticker]
     
     start = st.date_input("Start Date", value=date(2021,1,1))
     end = st.date_input("End Date", value=date.today())
     
-    st.subheader("Strategy Parameters")
+    st.subheader("Parameters")
     
     # Dynamic parameter inputs based on selected strategy
     strategy_params = {}
@@ -447,14 +448,14 @@ with st.sidebar:
         strategy_params['top_n'] = st.number_input("Top N (Long)", 1, 10, 3, step=1)
         strategy_params['bottom_n'] = st.number_input("Bottom N (Short)", 1, 10, 3, step=1)
     
-    st.subheader("Transaction Costs")
+    st.subheader("Costs")
     fee_bps = st.number_input("Commission (bps)", 0, 100, 1, step=1)
     slip_bps = st.number_input("Slippage (bps)", 0, 100, 2, step=1)
     
     if is_portfolio_strategy:
         max_positions = st.number_input("Max Portfolio Positions", 1, 20, 12, step=1)
     
-    st.subheader("Statistical Analysis")
+    st.subheader("Analysis")
     enable_mcpt = st.checkbox("Enable Monte Carlo Permutation Testing", value=True, 
                              help="Test statistical significance of backtest results")
     
@@ -581,79 +582,9 @@ with st.sidebar:
     st.markdown("---")
     run_btn = st.button("Run Backtest", width='stretch')
     
-    # AI Assistant Section
+    # AI Research Lab Link
     st.markdown("---")
-    st.header("AI Assistant")
-    
-    if not st.session_state.assistant_available:
-        st.warning("Anthropic API key not found. Set ANTHROPIC_API_KEY environment variable to enable AI features.")
-    else:
-        st.success("AI Assistant Ready")
-        
-        # Quick analysis button
-        if st.session_state.current_results:
-            if st.button("Analyze Results", width='stretch'):
-                with st.spinner("AI is analyzing your results..."):
-                    analysis = st.session_state.assistant.analyze_backtest_results(
-                        st.session_state.current_results['metrics'],
-                        st.session_state.current_results['equity'],
-                        st.session_state.current_results['trades'],
-                        st.session_state.current_results['params']
-                    )
-                    st.session_state.chat_history.append({
-                        "role": "assistant",
-                        "content": f"## Backtest Analysis\n\n{analysis}"
-                    })
-                    st.rerun()
-        
-        # Quick prompt buttons
-        st.subheader("Quick Prompts")
-        quick_prompts = [
-            "Summarize performance",
-            "Suggest parameter improvements", 
-            "What if I traded only during high volatility?",
-            "Compare to buy & hold",
-            "Identify best/worst trades",
-            "Risk analysis and recommendations"
-        ]
-        
-        for i, prompt in enumerate(quick_prompts):
-            if st.button(prompt, key=f"quick_prompt_{i}", width='stretch'):
-                with st.spinner("AI is thinking..."):
-                    context = st.session_state.current_results if st.session_state.current_results else None
-                    answer = st.session_state.assistant.answer_question(prompt, context)
-                    st.session_state.chat_history.append({
-                        "role": "user",
-                        "content": prompt
-                    })
-                    st.session_state.chat_history.append({
-                        "role": "assistant", 
-                        "content": answer
-                    })
-                    st.rerun()
-        
-        # Chat interface
-        st.subheader("Ask Questions")
-        user_question = st.text_input("Ask about trading, strategies, or results:", key="user_question")
-        
-        if st.button("Send", key="send_question") and user_question:
-            with st.spinner("AI is thinking..."):
-                context = st.session_state.current_results if st.session_state.current_results else None
-                answer = st.session_state.assistant.answer_question(user_question, context)
-                st.session_state.chat_history.append({
-                    "role": "user",
-                    "content": user_question
-                })
-                st.session_state.chat_history.append({
-                    "role": "assistant", 
-                    "content": answer
-                })
-                st.rerun()
-        
-        # Clear chat button
-        if st.button("Clear Chat", width='stretch'):
-            st.session_state.chat_history = []
-            st.rerun()
+    st.info("**AI Research Lab** is now available in its own tab! Click the 'AI Research' tab to access all AI features.")
 
 # MLflow setup
 mlflow.set_tracking_uri("http://localhost:5000")
@@ -661,7 +592,7 @@ mlflow.set_experiment("ma_crossover")
 
 # Main content area with tabs
 st.markdown("<br>", unsafe_allow_html=True)  # Add some top spacing
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Backtest Results", "Walk-Forward Analysis", "Strategy Library", "Metrics Key", "Market Watch"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Backtest Results", "Walk-Forward Analysis", "Strategy Library", "Metrics Key", "Market Watch", "AI Research"])
 
 with tab1:
     if run_btn:
@@ -669,12 +600,33 @@ with tab1:
             try:
                 # Load data for all selected tickers
                 data_dict = {}
+                failed_tickers = []
                 for ticker in selected_tickers:
-                    df = load_yf_data([ticker], str(start), str(end))
-                    data_dict[ticker] = df
+                    try:
+                        df = load_yf_data([ticker], str(start), str(end))
+                        if df.empty:
+                            failed_tickers.append(ticker)
+                            st.warning(f"No data available for {ticker}")
+                        else:
+                            data_dict[ticker] = df
+                            st.success(f"Loaded data for {ticker}: {len(df)} rows")
+                    except Exception as e:
+                        failed_tickers.append(ticker)
+                        st.warning(f"Error loading data for {ticker}: {str(e)}")
+                
+                if not data_dict:
+                    st.error("No data available for any selected tickers. Please check your ticker symbols and date range.")
+                    st.error("Common issues:")
+                    st.error("- Invalid ticker symbols")
+                    st.error("- Date range too long or invalid")
+                    st.error("- Network connectivity issues")
+                    st.stop()
                 
                 # Create strategy
                 strat = get_strategy(strategy_name, **strategy_params)
+                
+                # Check if strategy is portfolio strategy
+                is_portfolio = strat.is_portfolio_strategy()
                 
                 # Create MCPT configuration if enabled
                 mcpt_config = None
@@ -745,25 +697,35 @@ with tab1:
                         time_stop_bars=time_stop_bars if enable_time_stop else 30
                     )
                     
-                    bt = PortfolioBacktester(
-                        commission=fee_bps/10000, 
-                        slippage=slip_bps/10000,
-                        max_positions=max_positions,
-                        enable_mcpt=enable_mcpt,
-                        mcpt_config=mcpt_config,
-                        enable_bootstrap=enable_bootstrap,
-                        bootstrap_config=bootstrap_config,
-                        enable_regime_filter=enable_regime_filter,
-                        regime_filter_config=regime_filter_config,
-                        enable_vol_targeting=enable_vol_targeting,
-                        vol_targeting_config=vol_targeting_config,
-                        allocation_method=allocation_method_lower,
-                        allocation_config=allocation_config,
-                        position_management_config=position_config,
-                        enable_basic_exits=enable_atr_stop or enable_time_stop,
-                        basic_exits_config=basic_exits_config
-                    )
-                    results = bt.run_portfolio_backtest(data_dict, strat, str(start), str(end))
+                    try:
+                        bt = PortfolioBacktester(
+                            commission=fee_bps/10000, 
+                            slippage=slip_bps/10000,
+                            max_positions=max_positions,
+                            enable_mcpt=enable_mcpt,
+                            mcpt_config=mcpt_config,
+                            enable_bootstrap=enable_bootstrap,
+                            bootstrap_config=bootstrap_config,
+                            enable_regime_filter=enable_regime_filter,
+                            regime_filter_config=regime_filter_config,
+                            enable_vol_targeting=enable_vol_targeting,
+                            vol_targeting_config=vol_targeting_config,
+                            allocation_method=allocation_method_lower,
+                            allocation_config=allocation_config,
+                            position_management_config=position_config,
+                            enable_basic_exits=enable_atr_stop or enable_time_stop,
+                            basic_exits_config=basic_exits_config
+                        )
+                        results = bt.run_portfolio_backtest(data_dict, strat, str(start), str(end))
+                        
+                        # Check if backtest was successful
+                        if 'error' in results:
+                            st.error(f"Backtest failed: {results['error']}")
+                            st.stop()
+                    except Exception as e:
+                        st.error(f"Error running portfolio backtest: {str(e)}")
+                        st.error("This might be due to data issues or configuration problems. Please check your settings and try again.")
+                        st.stop()
                 else:
                     # Single ticker backtest
                     if len(selected_tickers) > 1:
@@ -771,6 +733,9 @@ with tab1:
                     
                     ticker = selected_tickers[0]
                     df = data_dict[ticker]
+                    
+                    # Debug: Show basic data info
+                    st.info(f"Data loaded: {df.shape[0]} rows, {df.shape[1]} columns")
                     
                     # Prepare data for single-ticker strategy by renaming columns
                     df_prepared = df.copy()
@@ -782,6 +747,15 @@ with tab1:
                             f"{ticker}_low": "low",
                             f"{ticker}_volume": "volume"
                         })
+                        st.info(f"Renamed columns for single-ticker strategy")
+                    else:
+                        st.warning(f"Expected column {ticker}_close not found. Available columns: {list(df_prepared.columns)}")
+                        # Try to use the data as-is if it already has the right column names
+                        if 'close' in df_prepared.columns:
+                            st.info("Using existing 'close' column")
+                        else:
+                            st.error("No suitable close price column found")
+                            st.stop()
                     
                     # Create regime filter configuration if enabled
                     regime_filter_config = None
@@ -817,7 +791,17 @@ with tab1:
                         vol_targeting_config=vol_targeting_config
                     )
                     
-                    results = bt.run_backtest(df_prepared, strat, str(start), str(end))
+                    try:
+                        results = bt.run_backtest(df_prepared, strat, str(start), str(end))
+                        
+                        # Check if backtest was successful
+                        if 'error' in results:
+                            st.error(f"Backtest failed: {results['error']}")
+                            st.stop()
+                    except Exception as e:
+                        st.error(f"Error running single-ticker backtest: {str(e)}")
+                        st.error("This might be due to data issues or configuration problems. Please check your settings and try again.")
+                        st.stop()
                 
                 # Extract results
                 equity = results.get('equity_curve', pd.Series())
@@ -855,12 +839,12 @@ with tab1:
                 # Display volatility targeting information if enabled
                 if enable_vol_targeting and 'volatility_targeting' in results:
                     vol_info = results['volatility_targeting']
-                    st.info(f"📊 **Volatility Targeting Active**: Target {vol_info['target_vol']:.1%} | "
+                    st.info(f"**Volatility Targeting Active**: Target {vol_info['target_vol']:.1%} | "
                            f"Pre: {vol_info['realized_vol_pre']:.1%} → Post: {vol_info['realized_vol_post']:.1%} | "
                            f"Avg Scaling: {vol_info['avg_scaling']:.2f}x")
                 
                 # Styled metric cards
-                st.subheader("Performance Dashboard")
+                st.subheader("Performance")
                 col1, col2, col3, col4 = st.columns(4)
                 
                 with col1:
@@ -1340,25 +1324,21 @@ with tab1:
                         else:
                             st.warning(f"⚠️ {significant_count}/{total_metrics} metrics show statistical significance. Results may be due to chance.")
                         
-                        # Key insights
-                        st.subheader("Key Insights")
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            st.markdown("**Most Significant Metrics:**")
-                            top_significant = significant_metrics.nsmallest(3, 'P-Value')
-                            for _, row in top_significant.iterrows():
-                                st.write(f"• {row['Metric']}: p = {row['P-Value']:.4f}")
-                        
-                        with col2:
-                            st.markdown("**Least Significant Metrics:**")
-                            least_significant = mcpt_summary.nlargest(3, 'P-Value')
-                            for _, row in least_significant.iterrows():
-                                st.write(f"• {row['Metric']}: p = {row['P-Value']:.4f}")
-                    else:
-                        st.info("MCPT analysis completed but no results available for display.")
-                else:
-                    st.info("MCPT significance testing is disabled or failed. Enable in backtester configuration to see statistical significance analysis.")
+                # Key insights
+                st.subheader("Insights")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown("**Most Significant Metrics:**")
+                    top_significant = significant_metrics.nsmallest(3, 'P-Value')
+                    for _, row in top_significant.iterrows():
+                        st.write(f"• {row['Metric']}: p = {row['P-Value']:.4f}")
+                
+                with col2:
+                    st.markdown("**Least Significant Metrics:**")
+                    least_significant = mcpt_summary.nlargest(3, 'P-Value')
+                    for _, row in least_significant.iterrows():
+                        st.write(f"• {row['Metric']}: p = {row['P-Value']:.4f}")
                 
                 # Bootstrap Confidence Intervals Results
                 if 'bootstrap_results' in results and 'summary' in results['bootstrap_results']:
@@ -2529,15 +2509,438 @@ with tab5:
         if stale_tickers > 0:
             st.warning(f"{stale_tickers} ticker(s) have stale data. Consider refreshing.")
 
-# AI Chat Display
-if st.session_state.chat_history:
-    st.markdown("---")
-    st.header("AI Assistant Chat")
+with tab6:
+    st.header("AI Research Lab")
+    st.write("AI-powered strategy development, analysis, and iteration")
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    for message in st.session_state.chat_history:
-        if message["role"] == "user":
-            with st.chat_message("user"):
-                st.write(message["content"])
+    # Direct Chat Interface
+    st.subheader("Direct AI Chat")
+    st.write("Ask questions directly to the AI assistant about trading, strategies, or analysis")
+    
+    # Initialize chat history for this tab
+    if 'ai_chat_history' not in st.session_state:
+        st.session_state.ai_chat_history = []
+    
+    # Display chat history
+    if st.session_state.ai_chat_history:
+        st.subheader("Chat History")
+        for message in st.session_state.ai_chat_history:
+            if message["role"] == "user":
+                with st.chat_message("user"):
+                    st.write(message["content"])
+            else:
+                with st.chat_message("assistant"):
+                    st.markdown(message["content"])
+    
+    # Chat input
+    col1, col2 = st.columns([4, 1])
+    with col1:
+        user_input = st.text_input("Ask a question:", placeholder="e.g., How can I improve my strategy's Sharpe ratio?", key="ai_chat_input")
+    with col2:
+        send_button = st.button("Send", key="ai_send_button", use_container_width=True)
+    
+    # Process chat input
+    if send_button and user_input:
+        if st.session_state.assistant_available:
+            with st.spinner("AI is thinking..."):
+                try:
+                    # Get context from current results if available
+                    context = st.session_state.current_results if st.session_state.current_results else None
+                    
+                    # Add user message to history
+                    st.session_state.ai_chat_history.append({
+                        "role": "user",
+                        "content": user_input
+                    })
+                    
+                    # Get AI response
+                    response = st.session_state.assistant.answer_question(user_input, context)
+                    
+                    # Add AI response to history
+                    st.session_state.ai_chat_history.append({
+                        "role": "assistant",
+                        "content": response
+                    })
+                    
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error getting AI response: {str(e)}")
         else:
-            with st.chat_message("assistant"):
-                st.markdown(message["content"])
+            st.warning("Anthropic API key not found. Set ANTHROPIC_API_KEY environment variable to enable AI features.")
+    
+    # Clear chat button
+    if st.button("Clear Chat History", key="ai_clear_chat"):
+        st.session_state.ai_chat_history = []
+        st.rerun()
+    
+    st.markdown("---")
+    
+    # Create columns for different AI features
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Quant Researcher")
+        st.write("Analyzes failed runs and proposes improvement experiments")
+        
+        if st.button("Generate Experiments", help="Analyze current run and propose 3 improvement experiments", use_container_width=True):
+            st.session_state['show_quant_researcher'] = True
+    
+    with col2:
+        st.subheader("Strategy Developer")
+        st.write("Translates experiments into precise change requests")
+        
+        if st.button("Generate Changes", help="Translate selected experiments into implementation changes", use_container_width=True):
+            st.session_state['show_strategy_developer'] = True
+    
+    st.markdown("---")
+    
+    # Quant Researcher Section
+    if st.session_state.get('show_quant_researcher', False):
+        st.subheader("Quant Researcher - Generate Experiments")
+        
+        # Load Quant Researcher
+        from neural_quant.analysis.quant_researcher import QuantResearcher
+        researcher = QuantResearcher()
+        
+        # Mock artifacts for demonstration (in real use, these would come from a selected run)
+        mock_artifacts = {
+            'metrics': {
+                'sharpe_ratio': 0.7,
+                'max_drawdown': 0.15,
+                'profit_factor': 1.1,
+                'total_return': 0.08,
+                'total_trades': 25,
+                'win_rate': 0.45
+            },
+            'params': {
+                'strategy': 'MovingAverageCrossover',
+                'tickers': ['AAPL', 'GOOGL', 'MSFT'],
+                'start_date': '2023-01-01',
+                'end_date': '2024-01-01'
+            },
+            'trades': [{'pnl': 50, 'return': 0.01} for _ in range(25)],
+            'mcpt_results': {
+                'results': [{'metric_name': 'sharpe_ratio', 'p_value': 0.12}]
+            },
+            'bootstrap_results': {
+                'results': [{'metric_name': 'sharpe_ratio', 'confidence_interval': [0.3, 1.1]}]
+            },
+            'walkforward_results': {
+                'rolling_p_values': [0.08, 0.12, 0.15, 0.18, 0.20]
+            }
+        }
+        
+        try:
+            experiments = researcher.generate_experiments(mock_artifacts, ['AAPL', 'GOOGL', 'MSFT'], 3)
+            
+            if 'error' in experiments:
+                st.error(f"Error generating experiments: {experiments['error']}")
+            else:
+                # Display hypotheses
+                if experiments.get('hypotheses'):
+                    st.subheader("Research Hypotheses")
+                    for i, hypothesis in enumerate(experiments['hypotheses'], 1):
+                        with st.expander(f"H{i}: {hypothesis['rationale'][:100]}..."):
+                            st.write(f"**Rationale:** {hypothesis['rationale']}")
+                            st.write(f"**Regimes:** {', '.join(hypothesis['regimes'])}")
+                            st.write(f"**Tickers:** {', '.join(hypothesis['tickers'])}")
+                
+                # Display experiments
+                if experiments.get('experiments'):
+                    st.subheader("Proposed Experiments")
+                    for i, experiment in enumerate(experiments['experiments'], 1):
+                        with st.expander(f"E{i}: {experiment['strategy']} - {experiment.get('description', 'No description')}"):
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                st.write("**Strategy:**", experiment['strategy'])
+                                st.write("**Parameters:**")
+                                for param, value in experiment['params'].items():
+                                    st.write(f"  - {param}: {value}")
+                                
+                                st.write("**Overlays:**")
+                                for overlay, setting in experiment['overlays'].items():
+                                    st.write(f"  - {overlay}: {setting}")
+                            
+                            with col2:
+                                st.write("**Success Criteria:**")
+                                for criterion, threshold in experiment['success_criteria'].items():
+                                    st.write(f"  - {criterion}: {threshold}")
+                                
+                                st.write("**Risks:**")
+                                for risk in experiment['risks']:
+                                    st.write(f"  - {risk}")
+                
+                # Display data needs
+                if experiments.get('next_data_needs'):
+                    st.subheader("Data Requirements")
+                    for need in experiments['next_data_needs']:
+                        st.write(f"• {need}")
+                
+                # Store experiments for Strategy Developer
+                st.session_state['generated_experiments'] = experiments.get('experiments', [])
+                
+        except Exception as e:
+            st.error(f"Error running Quant Researcher: {str(e)}")
+    
+    # Strategy Developer Section
+    if st.session_state.get('show_strategy_developer', False):
+        st.subheader("Strategy Developer - Generate Changes")
+        
+        # Load Strategy Developer
+        from neural_quant.analysis.strategy_developer import StrategyDeveloper
+        developer = StrategyDeveloper()
+        
+        # Get experiments from Quant Researcher
+        experiments = st.session_state.get('generated_experiments', [])
+        
+        if not experiments:
+            st.warning("No experiments available. Please generate experiments first using the Quant Researcher.")
+        else:
+            # Let user select experiments
+            st.write("Select experiments to translate into changes:")
+            selected_experiments = []
+            
+            for i, experiment in enumerate(experiments):
+                if st.checkbox(f"E{i+1}: {experiment['strategy']}", key=f"exp_{i}"):
+                    selected_experiments.append(experiment)
+            
+            if selected_experiments:
+                try:
+                    changes = developer.translate_experiments(selected_experiments, 9)
+                    
+                    if 'error' in changes:
+                        st.error(f"Error generating changes: {changes['error']}")
+                    else:
+                        # Display changes
+                        if changes.get('changes'):
+                            st.subheader("Proposed Changes")
+                            for i, change in enumerate(changes['changes'], 1):
+                                with st.expander(f"Change {i}: {change['type']}"):
+                                    if change['type'] == 'param_grid':
+                                        st.write(f"**Strategy:** {change['strategy']}")
+                                        st.write("**Parameter Grid:**")
+                                        for param, values in change['grid'].items():
+                                            st.write(f"  - {param}: {values}")
+                                    
+                                    elif change['type'] in ['overlay_update', 'overlay_add']:
+                                        st.write(f"**Overlay:** {change['name']}")
+                                        st.write("**Settings:**")
+                                        for setting, value in change['settings'].items():
+                                            st.write(f"  - {setting}: {value}")
+                                    
+                                    elif change['type'] == 'code_change':
+                                        st.write(f"**File:** {change['file']}")
+                                        st.write(f"**Function:** {change['function']}")
+                                        st.write(f"**Description:** {change['description']}")
+                        
+                        # Display sweeps
+                        if changes.get('sweeps'):
+                            st.subheader("Parameter Sweeps")
+                            for i, sweep in enumerate(changes['sweeps'], 1):
+                                with st.expander(f"Sweep {i}: {sweep['strategy']}"):
+                                    st.write("**Parameters:**")
+                                    for param, values in sweep['params'].items():
+                                        st.write(f"  - {param}: {values}")
+                                    st.write(f"**Max Grid Size:** {sweep['max_grid']}")
+                        
+                        # Display tests
+                        if changes.get('tests'):
+                            st.subheader("Recommended Tests")
+                            for test in changes['tests']:
+                                st.write(f"• {test}")
+                
+                except Exception as e:
+                    st.error(f"Error running Strategy Developer: {str(e)}")
+    
+    st.markdown("---")
+    
+    # Strategy Analyst Section
+    st.subheader("Strategy Analyst")
+    st.write("Final arbiter for run evaluation and promotion decisions")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("Evaluate Current Run", help="Analyze the most recent backtest run", use_container_width=True):
+            st.session_state['show_strategy_analyst'] = True
+    
+    with col2:
+        if st.button("Ask About This Run", help="Ask questions about the current run", use_container_width=True):
+            st.session_state['show_run_qa'] = True
+    
+    with col3:
+        if st.button("Generate Weekly Memo", help="Create a weekly research report", use_container_width=True):
+            st.session_state['show_weekly_memo'] = True
+    
+    # Strategy Analyst Evaluation
+    if st.session_state.get('show_strategy_analyst', False):
+        st.subheader("Strategy Analyst Evaluation")
+        
+        # Load Strategy Analyst
+        from neural_quant.analysis.summary_generator import StrategyAnalyst
+        analyst = StrategyAnalyst()
+        
+        # Mock evaluation for demonstration
+        mock_artifacts = {
+            'metrics': {
+                'sharpe_ratio': 0.7,
+                'max_drawdown': 0.15,
+                'profit_factor': 1.1,
+                'total_return': 0.08,
+                'total_trades': 25,
+                'win_rate': 0.45
+            },
+            'params': {
+                'strategy': 'MovingAverageCrossover',
+                'tickers': ['AAPL'],
+                'start_date': '2023-01-01',
+                'end_date': '2024-01-01'
+            },
+            'trades': [{'pnl': 50, 'return': 0.01} for _ in range(25)],
+            'mcpt_results': {
+                'results': [{'metric_name': 'sharpe_ratio', 'p_value': 0.12}]
+            },
+            'bootstrap_results': {
+                'results': [{'metric_name': 'sharpe_ratio', 'confidence_interval': [0.3, 1.1]}]
+            }
+        }
+        
+        try:
+            summary = analyst.evaluate_run_bundle('demo_run', mock_artifacts)
+            
+            # Display promotion decision
+            promote = summary['promotion_decision']['promote']
+            decision_color = "green" if promote else "red"
+            decision_text = "PROMOTE" if promote else "REJECT"
+            
+            st.markdown(f"### Decision: <span style='color: {decision_color}; font-size: 24px; font-weight: bold;'>{decision_text}</span>", unsafe_allow_html=True)
+            
+            # Display executive summary
+            st.subheader("Executive Summary")
+            st.write(summary['executive_summary'])
+            
+            # Display significance verdict
+            st.subheader("Significance Verdict")
+            st.write(f"**Status:** {summary['significance_verdict']}")
+            
+            # Display robustness notes
+            st.subheader("Robustness Notes")
+            for note in summary['robustness_notes']:
+                st.write(f"• {note}")
+            
+            # Display actionable experiments
+            st.subheader("Actionable Next Experiments")
+            for i, experiment in enumerate(summary['actionable_experiments'], 1):
+                st.write(f"{i}. {experiment}")
+            
+            # Display promotion criteria
+            st.subheader("Promotion Criteria Analysis")
+            criteria = summary['promotion_decision']
+            st.write(f"**Reasons:** {', '.join(criteria['reasons'])}")
+            
+        except Exception as e:
+            st.error(f"Error running Strategy Analyst: {str(e)}")
+    
+    # Run Q&A Section
+    if st.session_state.get('show_run_qa', False):
+        st.subheader("Ask About This Run")
+        
+        # Load Run Q&A System
+        from neural_quant.analysis.run_qa import RunQASystem
+        qa_system = RunQASystem()
+        
+        # Mock context for demonstration
+        mock_context = {
+            'run_id': 'demo_run',
+            'strategy': 'MovingAverageCrossover',
+            'tickers': ['AAPL'],
+            'period': '2023-01-01 to 2024-01-01',
+            'metrics': {
+                'total_return': 0.08,
+                'sharpe_ratio': 0.7,
+                'max_drawdown': 0.15,
+                'total_trades': 25,
+                'win_rate': 0.45,
+                'profit_factor': 1.1
+            },
+            'trades': [{'pnl': 50, 'return': 0.01} for _ in range(25)],
+            'mcpt_results': {'results': [{'metric_name': 'sharpe_ratio', 'p_value': 0.12}]},
+            'bootstrap_results': {'results': [{'metric_name': 'sharpe_ratio', 'confidence_interval': [0.3, 1.1]}]}
+        }
+        
+        question = st.text_input("Ask a question about this run:", placeholder="e.g., What was the worst performing month?")
+        
+        if st.button("Ask Question") and question:
+            try:
+                context_prompt = qa_system.generate_context_prompt(mock_context)
+                # In a real implementation, this would call the LLM
+                st.write("**Context:**")
+                st.text_area("", value=context_prompt, height=200, disabled=True)
+                st.write("**Answer:** (This would be generated by the LLM in a real implementation)")
+                st.info("In a real implementation, this would provide AI-generated answers based on the run context.")
+            except Exception as e:
+                st.error(f"Error running Q&A: {str(e)}")
+    
+    # Weekly Memo Section
+    if st.session_state.get('show_weekly_memo', False):
+        st.subheader("Weekly Research Memo")
+        
+        # Load Weekly Memo Generator
+        from neural_quant.analysis.weekly_memo import WeeklyMemoGenerator
+        memo_generator = WeeklyMemoGenerator()
+        
+        try:
+            # Mock runs for demonstration
+            mock_runs = [
+                {
+                    'run_id': 'run_1',
+                    'strategy': 'MovingAverageCrossover',
+                    'sharpe_ratio': 0.7,
+                    'total_return': 0.08,
+                    'max_drawdown': 0.15,
+                    'promotion_decision': False
+                },
+                {
+                    'run_id': 'run_2',
+                    'strategy': 'BollingerBands',
+                    'sharpe_ratio': 1.2,
+                    'total_return': 0.15,
+                    'max_drawdown': 0.08,
+                    'promotion_decision': True
+                }
+            ]
+            
+            memo = memo_generator.generate_weekly_memo(mock_runs)
+            
+            st.write("**Generated Weekly Memo:**")
+            st.markdown(memo)
+            
+        except Exception as e:
+            st.error(f"Error generating weekly memo: {str(e)}")
+    
+    # Clear session state buttons
+    st.markdown("---")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        if st.button("Clear Quant Researcher", use_container_width=True):
+            st.session_state['show_quant_researcher'] = False
+            st.rerun()
+    
+    with col2:
+        if st.button("Clear Strategy Developer", use_container_width=True):
+            st.session_state['show_strategy_developer'] = False
+            st.rerun()
+    
+    with col3:
+        if st.button("Clear Strategy Analyst", use_container_width=True):
+            st.session_state['show_strategy_analyst'] = False
+            st.rerun()
+    
+    with col4:
+        if st.button("Clear All AI", use_container_width=True):
+            for key in ['show_quant_researcher', 'show_strategy_developer', 'show_strategy_analyst', 'show_run_qa', 'show_weekly_memo']:
+                st.session_state[key] = False
+            st.rerun()

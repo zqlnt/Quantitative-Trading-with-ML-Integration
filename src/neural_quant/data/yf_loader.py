@@ -86,7 +86,12 @@ def load_yf_data(symbols: List[str],
         return pd.DataFrame()
     
     # Combine all data
-    combined_data = pd.concat(all_data, axis=1, sort=True)
+    if len(all_data) == 1:
+        # Single symbol - return as-is
+        combined_data = all_data[0]
+    else:
+        # Multiple symbols - concatenate
+        combined_data = pd.concat(all_data, axis=1, sort=True)
     
     # Forward fill missing values
     combined_data = combined_data.ffill()

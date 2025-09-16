@@ -30,15 +30,19 @@ Open http://localhost:8502 in your browser.
 - **Market Watch**: Live price charts for 12 supported tickers
 - **AI Assistant**: Anthropic Claude integration for strategy analysis
 - **Experiment Tracking**: MLflow integration for reproducible research
+- **Strategy Iteration**: R1→R2→Execution→R3 loop for automated strategy improvement
+- **Risk Management**: Regime filtering, volatility targeting, position caps, and basic exits
+- **Portfolio Management**: Equal-weight and volatility-weighted allocation methods
 
 ## 📊 Usage
 
 ### Streamlit Dashboard
-1. **Backtest Results**: Run strategies with statistical significance testing
+1. **Backtest Results**: Run strategies with statistical significance testing and Strategy Analyst evaluation
 2. **Walk-Forward Analysis**: Rolling window analysis with significance tracking
 3. **Strategy Library**: Browse available strategies and parameters
 4. **Metrics Key**: Learn about performance metrics and statistical concepts
 5. **Market Watch**: Monitor live prices and market data
+6. **Strategy Iteration**: Automated R1→R2→Execution→R3 loop for failed strategies
 
 ### Command Line
 ```bash
@@ -148,9 +152,43 @@ pytest --cov=src         # Run with coverage
 **Streamlit Issues**
 - Ensure port 8502 is available for the dashboard.
 
+## 🤖 AI-Powered Strategy Development
+
+### R1 - Quant Researcher
+- **Role**: Analyzes failed runs and proposes improvement experiments
+- **Input**: Run artifacts (metrics, p-values, confidence intervals)
+- **Output**: Up to 3 testable experiments with success criteria
+- **Focus**: Robustness improvements over just returns
+
+### R2 - Strategy Developer
+- **Role**: Translates experiments into precise change requests
+- **Input**: Selected experiments from R1
+- **Output**: Parameter grids, overlay settings, code changes
+- **Focus**: Minimal changes with maximum impact
+
+### R3 - Strategy Analyst
+- **Role**: Final arbiter for run evaluation and promotion decisions
+- **Input**: Full Run Bundle artifacts
+- **Output**: Executive summary, significance verdict, promotion decision
+- **Focus**: Strict adherence to promotion rules
+
+### Orchestration Engine
+- **Role**: Manages complete R1→R2→Execution→R3 loop
+- **Features**: Automated experiment execution, lineage tracking, iteration graphs
+- **UI**: "Iterate from this run" button for rejected strategies
+
 ## 📋 Changelog
 
-### v0.1.0 (Current)
+### v0.2.0 (Current)
+- **AI-Powered Strategy Development**: R1→R2→R3 loop with automated iteration
+- **Strategy Analyst**: Final arbiter for promotion decisions
+- **Risk Management**: Regime filtering, volatility targeting, position caps
+- **Portfolio Management**: Equal-weight and volatility-weighted allocation
+- **Basic Exits**: ATR stops and time-based stops
+- **Artifact Management**: Structured Run Bundle with all artifacts
+- **Iteration Tracking**: Parent-child run relationships and lineage graphs
+
+### v0.1.0
 - 4 trading strategies with high-fidelity backtesting
 - Monte Carlo Permutation Testing and Bootstrap Confidence Intervals
 - Walk-Forward Analysis with significance tracking
