@@ -991,6 +991,98 @@ with tab1:
                         st.session_state['show_qa'] = False
                         st.rerun()
                 
+                # Quant Researcher Button
+                col1, col2, col3 = st.columns([1, 2, 1])
+                with col2:
+                    if st.button("🧠 Generate Experiments", help="Generate testable experiments based on this run's performance", use_container_width=True):
+                        st.session_state['show_researcher'] = True
+                        st.session_state['researcher_results'] = results
+                        st.session_state['researcher_strategy'] = strategy_name
+                        st.session_state['researcher_tickers'] = selected_tickers
+                
+                # Quant Researcher Section
+                if st.session_state.get('show_researcher', False) and st.session_state.get('researcher_results') == results:
+                    st.markdown("### 🧠 Quant Researcher - Generate Experiments")
+                    
+                    # Load Quant Researcher
+                    from neural_quant.analysis.quant_researcher import QuantResearcher
+                    researcher = QuantResearcher()
+                    
+                    # Create artifacts for analysis
+                    artifacts = {
+                        'metrics': results.get('metrics', {}),
+                        'params': {
+                            'strategy': st.session_state.get('researcher_strategy', 'Unknown'),
+                            'tickers': st.session_state.get('researcher_tickers', []),
+                            'start_date': str(start),
+                            'end_date': str(end)
+                        },
+                        'mcpt_results': results.get('mcpt_results', {}),
+                        'bootstrap_results': results.get('bootstrap_results', {}),
+                        'walkforward_results': results.get('walkforward_results', {})
+                    }
+                    
+                    # Generate experiments
+                    with st.spinner("Analyzing run artifacts and generating experiments..."):
+                        experiments = researcher.generate_experiments(
+                            artifacts=artifacts,
+                            universe=st.session_state.get('researcher_tickers', []),
+                            max_experiments=3
+                        )
+                    
+                    # Display hypotheses
+                    if experiments.get('hypotheses'):
+                        st.subheader("Research Hypotheses")
+                        for hypothesis in experiments['hypotheses']:
+                            with st.expander(f"**{hypothesis['id']}**: {hypothesis['rationale'][:100]}..."):
+                                st.write(f"**Rationale:** {hypothesis['rationale']}")
+                                st.write(f"**Regimes:** {', '.join(hypothesis['regimes'])}")
+                                st.write(f"**Tickers:** {', '.join(hypothesis['tickers'])}")
+                    
+                    # Display experiments
+                    if experiments.get('experiments'):
+                        st.subheader("Proposed Experiments")
+                        for i, experiment in enumerate(experiments['experiments']):
+                            with st.expander(f"**{experiment['id']}**: {experiment['strategy']} Strategy"):
+                                col1, col2 = st.columns(2)
+                                
+                                with col1:
+                                    st.write("**Strategy Parameters:**")
+                                    for param, value in experiment['params'].items():
+                                        st.write(f"- {param}: {value}")
+                                
+                                with col2:
+                                    st.write("**Overlays:**")
+                                    overlays = experiment['overlays']
+                                    st.write(f"- Regime: {overlays['regime']}")
+                                    st.write(f"- Vol Target: {overlays['vol_target']}")
+                                    st.write(f"- Allocation: {overlays['alloc']}")
+                                    st.write(f"- Position Cap: {overlays['position_cap']}")
+                                
+                                st.write("**Success Criteria:**")
+                                criteria = experiment['success_criteria']
+                                for criterion, threshold in criteria.items():
+                                    st.write(f"- {criterion}: {threshold}")
+                                
+                                st.write("**Risks:**")
+                                for risk in experiment['risks']:
+                                    st.write(f"- {risk}")
+                    
+                    # Display data needs
+                    if experiments.get('next_data_needs'):
+                        st.subheader("Next Data Needs")
+                        for need in experiments['next_data_needs']:
+                            st.write(f"- {need}")
+                    
+                    # Show raw JSON
+                    with st.expander("Raw JSON Output"):
+                        json_output = researcher.format_as_json(experiments)
+                        st.code(json_output, language='json')
+                    
+                    if st.button("Close Researcher"):
+                        st.session_state['show_researcher'] = False
+                        st.rerun()
+                
                 # MCPT Significance Testing Results
                 if 'mcpt_results' in results and 'summary' in results['mcpt_results']:
                     st.subheader("Statistical Significance Analysis")

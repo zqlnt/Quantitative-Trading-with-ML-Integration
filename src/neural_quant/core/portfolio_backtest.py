@@ -43,7 +43,7 @@ class PortfolioBacktester(Backtester):
                  allocation_config: AllocationMethodConfig = None,
                  position_management_config: PositionManagementConfig = None,
                  enable_basic_exits: bool = False,
-                 basic_exits_config: 'BasicExitsConfig' = None):
+                 basic_exits_config: BasicExitsConfig = None):
         """
         Initialize the portfolio backtester.
         

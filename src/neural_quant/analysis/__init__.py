@@ -74,6 +74,7 @@ from ..logging.artifacts import (
 from .summary_generator import SummaryGenerator, PromotionRules
 from .run_qa import RunQASystem
 from .weekly_memo import WeeklyMemoGenerator
+from .quant_researcher import QuantResearcher
 
 __all__ = [
     'MonteCarloPermutationTester',
@@ -117,5 +118,6 @@ __all__ = [
     'SummaryGenerator',
     'PromotionRules',
     'RunQASystem',
-    'WeeklyMemoGenerator'
+    'WeeklyMemoGenerator',
+    'QuantResearcher'
 ]
